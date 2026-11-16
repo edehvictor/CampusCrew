@@ -1,0 +1,82 @@
+:root{--paper:#eeedf2;--blue:#4870e6;--action:#345bcc;--ink:#151627;--muted:#62667a;--line:#dedee8;--nav:#171b2e;--white:#fff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:Inter,Arial,sans-serif;font-size:14px}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #7192ff;outline-offset:2px}
+.shell{min-height:100vh;display:grid;grid-template-columns:226px minmax(0,1fr)}
+.sidebar{min-height:100vh;background:var(--nav);color:#f3f3fc;display:flex;flex-direction:column;padding:28px 18px 20px}
+.brand{border:0;background:none;color:#fff;display:flex;align-items:center;gap:10px;font-weight:750;font-size:21px;letter-spacing:-.6px;padding:0}
+.brandmark{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--blue);font-weight:800;font-size:22px;color:#fff}
+.button{border:1px solid transparent;border-radius:9px;padding:10px 14px;font-weight:650;min-height:40px}
+.primary{background:var(--action);color:#fff}
+.primary:hover{background:#2749b0}
+.secondary{background:#fff;border-color:var(--line);color:var(--ink)}
+.post{margin:35px 0 28px;width:100%;text-align:left}
+nav p{color:#a2a7c0;font-size:11px;text-transform:uppercase;letter-spacing:.09em;margin:0 0 10px 10px}
+nav button{display:flex;align-items:center;gap:12px;color:#c6c9de;background:none;border:0;text-align:left;border-radius:8px;padding:12px 10px;width:100%;margin:3px 0}
+nav button[aria-current]{background:#2b365e;color:#fff}
+nav button span{width:17px;text-align:center;font-size:18px}
+.sidebar-bottom{margin-top:auto;display:flex;align-items:center;gap:9px;padding:18px 2px 0;color:#fff}
+.avatar{display:grid;place-items:center;background:#354574;color:#fff;border-radius:50%;font-weight:700}
+.avatar.small{width:33px;height:33px;font-size:11px}
+.sidebar-bottom small{display:block;color:#adb3cb;margin-top:3px}
+main{min-width:0}
+.topbar{min-height:74px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;padding:0 32px;color:var(--muted);gap:12px}
+.topbar strong{color:var(--ink)}
+.slash{margin:0 8px;color:#989bb0}
+.demo{white-space:nowrap;display:flex;align-items:center;gap:7px;border:1px solid #d9daea;border-radius:999px;padding:6px 11px;color:#3b487a;background:#f8f8ff;font-size:12px;font-weight:650}
+.demo i{width:7px;height:7px;border-radius:50%;background:var(--blue)}
+.intro{padding:34px 32px 25px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+h1,h2,h3,p{margin:0}
+h1{font-size:clamp(27px,4vw,38px);letter-spacing:-.045em;font-weight:750}
+.intro p{margin-top:9px;color:var(--muted);line-height:1.5}
+.mobile-post,.back{display:none}
+.board{margin:0 32px 30px;min-height:540px;border:1px solid var(--line);border-radius:16px;display:grid;grid-template-columns:minmax(275px,.88fr) minmax(320px,1.25fr);overflow:hidden;background:var(--white)}
+.listing{border-right:1px solid var(--line)}
+.filters{padding:19px 18px 12px}
+.filters div{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+input,select,textarea{border:1px solid var(--line);border-radius:8px;min-width:0;width:100%;background:#fbfbfd;color:var(--ink);padding:10px 11px}
+.results{padding:0 18px 10px;color:var(--muted);font-size:12px}
+.job{display:flex;align-items:flex-start;gap:12px;padding:16px 17px;width:100%;text-align:left;border:0;border-top:1px solid #ededf3;background:#fff;color:var(--ink);position:relative}
+.job:hover{background:#f7f8fe}
+.job.current{background:#edf1ff;box-shadow:inset 3px 0 var(--blue)}
+.category-icon{height:34px;width:34px;flex:0 0 34px;border-radius:9px;background:#e7edff;display:grid;place-items:center;font-size:11px;font-weight:750;color:#304caa}
+.category-icon[data-category="Hair & beauty"]{background:#f3e9fb;color:#724688}
+.category-icon[data-category="Tutoring"]{background:#e5f4ee;color:#287254}
+.category-icon[data-category="Tech & design"]{background:#fff2d9;color:#86611e}
+.job-body{flex:1;display:grid;gap:5px;min-width:0}
+.job-title{font-weight:700;line-height:1.35}
+.job-meta,.job-end{color:var(--muted);font-size:12px;line-height:1.4}
+.job-end{max-width:62px;text-align:right}
+.job-price{font-size:12px;font-weight:750;color:#3551a7}
+.detail{padding:27px 26px;min-width:0}
+.detail-labels,.booking-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.badge,.status{display:inline-block;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:700;background:#eef1ff;color:#3a53a6}
+.status{background:#f0eef4;color:#59566d}
+.status.positive{background:#e6f6ef;color:#236b4c}
+h2{font-size:clamp(23px,3.5vw,31px);line-height:1.15;letter-spacing:-.04em;margin-top:12px}
+.byline{color:var(--muted);margin-top:9px}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;border:1px solid var(--line);border-radius:10px;padding:13px;margin:22px 0}
+.facts small{display:block;color:var(--muted);margin-bottom:5px}
+.facts strong{display:block;font-size:13px;overflow-wrap:anywhere}
+h3{font-weight:700;font-size:15px}
+.scope{color:var(--muted);line-height:1.6;margin:8px 0 16px;overflow-wrap:anywhere;white-space:pre-wrap}
+.payment-note{color:#4f5781;font-size:12px;margin:0 0 20px;background:#f4f5fc;padding:10px;border-radius:8px}
+.quote{border:1px solid var(--line);display:flex;justify-content:space-between;gap:15px;padding:13px;border-radius:10px;margin-top:10px}
+.quote p{margin-top:5px;color:var(--muted);line-height:1.45;font-size:12px}
+.quote>div:last-child{white-space:nowrap;display:grid;gap:6px;align-content:start;text-align:right}
+.quote .button{min-height:34px;font-size:12px}
+.empty{padding:18px;color:var(--muted)}
+.announcement{margin:0 32px 20px;color:#304caa}
+.overlay{position:fixed;inset:0;z-index:5;display:grid;place-items:center;padding:18px;background:#1014299e}
+.modal{padding:20px;width:min(100%,500px);max-height:90vh;overflow:auto;background:#fff;border-radius:15px;box-shadow:0 18px 60px #0003}
+.modal header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:16px}
+.modal h2{margin:0;font-size:23px}
+.close{border:0;border-radius:7px;background:#f0f1f8;font-size:23px;width:34px;height:34px}
+form{display:grid;gap:12px}
+form label{display:grid;gap:5px;font-size:13px;font-weight:600}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:1050px){.shell{grid-template-columns:185px minmax(0,1fr)}.topbar,.intro{padding-inline:19px}.board{margin-inline:19px}.detail{padding:22px 17px}}
+@media(max-width:800px){.shell{display:block}.sidebar{min-height:0;padding:12px 16px;display:block}.sidebar nav{display:flex;margin-top:12px;gap:5px}.sidebar nav p,.post,.sidebar-bottom{display:none}nav button{padding:8px;justify-content:center;font-size:12px}nav button span{display:none}.topbar{min-height:47px}.intro{padding-block:21px 16px}.mobile-post{display:block;font-size:12px;white-space:nowrap}.board{display:block;min-height:350px;margin-inline:14px}.listing{border:0}.board .detail{display:none}.board.show-detail .listing{display:none}.board.show-detail .detail{display:block}.back{display:block;background:none;border:0;color:#3551a7;font-weight:700;padding:0;margin-bottom:17px}.detail{padding:18px}.facts{grid-template-columns:1fr 1fr}.intro p{font-size:13px}.topbar{font-size:12px}}
+@media(max-width:390px){.quote{display:grid}.quote>div:last-child{text-align:left}}
