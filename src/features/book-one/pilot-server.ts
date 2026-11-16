@@ -14,11 +14,12 @@ export async function authenticate(request: Request): Promise<PilotUser | null> 
   const token = request.headers.get("Authorization")?.match(/^Bearer (\S+)$/i)?.[1];
   if (!token) return null;
   const { data, error } = await getSupabaseAdmin().auth.getUser(token);
-  const identity = data.user?.identities?.find(item =>
-    item.provider === "web3" && item.identity_data?.chain === "ethereum",
-  );
-  const wallet = identity?.identity_data?.address;
-  if (error || !data.user || typeof wallet !== "string" || !isAddress(wallet, { strict: false })) {
+  // Supabase sets this provider identity ID from the wallet that signed the login message.
+  const wallet = data.user?.identities
+    ?.filter(identity => identity.provider === "web3")
+    .map(identity => /^web3:ethereum:(0x[0-9a-f]{40})$/i.exec(identity.id)?.[1])
+    .find(Boolean);
+  if (error || !data.user || !wallet) {
     throw new PilotError("Sign in again with your wallet.", 401);
   }
   return { id: data.user.id, wallet: wallet.toLowerCase() as Address };
