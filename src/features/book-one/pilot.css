@@ -1,0 +1,84 @@
+.board-intro .pilot-campus {
+  margin: 0 0 5px;
+  color: var(--primary-ink);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.pilot-account { min-width: 0; }
+.pilot-profile-button {
+  display: grid;
+  max-width: 128px;
+  justify-items: center;
+  gap: 2px;
+  padding: 2px 4px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 10px;
+  font-weight: 750;
+}
+.pilot-profile-button > span:last-child {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pilot-profile-button:hover { background: var(--primary-wash); }
+.pilot-profile-button .avatar { width: 30px; height: 30px; font-size: 10px; }
+.pilot-connect { white-space: nowrap; }
+
+.pilot-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px 14px;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.pilot-funds { display: flex; gap: 8px 12px; align-items: center; flex-wrap: wrap; }
+.pilot-bar small { margin-left: 3px; color: var(--muted); }
+.pilot-bar .button { min-height: 34px; font-size: 12px; }
+.pilot-bar p { flex-basis: 100%; color: var(--primary-ink); font-size: 12px; }
+
+.pilot-steps { display: grid; gap: 10px; }
+.pilot-steps p { color: var(--muted); }
+.pilot-steps .pilot-wallet { overflow-wrap: anywhere; font: 12px/1.5 ui-monospace, monospace; }
+.pilot-dialog fieldset {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 10px;
+  margin: 0;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.pilot-dialog legend { color: var(--muted); font-size: 12px; font-weight: 700; }
+.pilot-dialog .profile-check {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 26px;
+  font-weight: 550;
+}
+.pilot-dialog input[type="checkbox"] {
+  width: 16px;
+  min-height: 16px;
+  margin: 0;
+  accent-color: var(--primary);
+}
+
+.booking-receipts { display: flex; flex-wrap: wrap; gap: 7px 12px; margin-top: 10px; font-size: 12px; }
+.booking-receipts:empty { display: none; }
+.booking-receipts a { color: var(--primary-ink); }
+
+@media (max-width: 460px) {
+  .pilot-connect { gap: 4px; padding-inline: 7px; font-size: 11px; }
+  .workspace-actions:has(.pilot-connect, .pilot-account) { gap: 6px; }
+  .workspace-context:has(+ .workspace-actions .pilot-connect) .mobile-brand { font-size: 0; gap: 0; }
+}
