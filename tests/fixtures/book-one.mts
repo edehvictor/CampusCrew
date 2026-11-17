@@ -1,11 +1,11 @@
-import type { Job } from "./model";
+import type { Job } from "../../src/features/book-one/model";
 
-export const demoRequests: Job[] = [
+const tasks: Job[] = [
   {
     id: "cleaning",
     title: "Clean a two-bedroom student flat",
     category: "Cleaning",
-    area: "North Campus",
+    area: "Around Nsukka",
     timing: "Saturday, 10:00 AM",
     budget: 42000,
     scope: "Clean the kitchen, bathroom, and two bedrooms. I’ll provide the mop and cleaning supplies. The booking is for one visit.",
@@ -26,7 +26,7 @@ export const demoRequests: Job[] = [
     id: "hair",
     title: "Knotless braids before the weekend",
     category: "Hair & beauty",
-    area: "Main Campus",
+    area: "On campus",
     timing: "Friday afternoon",
     budget: 55000,
     scope: "Medium-sized knotless braids. I’ll bring the extensions. I can come to your workspace near campus.",
@@ -38,7 +38,7 @@ export const demoRequests: Job[] = [
     id: "maths",
     title: "Help with introductory calculus",
     category: "Tutoring",
-    area: "Main Campus",
+    area: "On campus",
     timing: "Wednesday evening",
     budget: 32000,
     scope: "A 90-minute session covering limits and differentiation, with time to work through a few practice questions.",
@@ -59,3 +59,34 @@ export const demoRequests: Job[] = [
     status: "Open",
   },
 ];
+
+const [cleaningRequest, braidsRequest] = tasks;
+
+const tasksWithApplications: Job[] = [
+  {
+    ...cleaningRequest,
+    area: "Around Nsukka",
+    quotes: [
+      ...cleaningRequest.quotes,
+      {
+        id: "ngozi",
+        provider: "Ngozi E.",
+        amount: 40000,
+        availability: "Saturday, 11:00 AM",
+        note: "I can clean the flat and wipe down the kitchen cabinets.",
+      },
+      {
+        id: "uche",
+        provider: "Uche N.",
+        amount: 42000,
+        availability: "Saturday, 10:00 AM",
+        note: "I can start at 10 and bring my own cleaning supplies.",
+      },
+    ],
+  },
+  { ...braidsRequest, area: "On campus" },
+];
+
+export function makeTaskFixtures(): Job[] {
+  return structuredClone([...tasksWithApplications, ...tasks.slice(2)]);
+}

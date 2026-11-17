@@ -1,12 +1,10 @@
 # Campuscrew roadmap
 
-## 1. Book One UI and local demo
+## 1. Verify the connected Book One app
 
-Make the existing task-to-booking demo usable on desktop and phone. Keep the service board broad enough for cleaning, beauty, tutoring, repairs, digital work, and errands. Review the new brand, two-section navigation, and list/detail layout before connecting accounts.
+Check the task board on desktop and mobile, including the empty state. Keep fixture data under tests and run a clean build before sharing the staging URL.
 
-Exit check: in a fresh browser session, post a task and apply to a sample task. Using the sample cleaning task, open the applications and select the provider, fund the booking, submit a completion note, and approve the simulated payout. Refresh and confirm the booking is still there.
-
-If the November 16 application window is still open, capture that flow in a short video and describe browser storage and simulated G$ accurately. A local demo shows the product flow. On-chain eligibility still requires a working Celo integration and contract or transaction evidence.
+Exit check: staging loads on two phones, displays real tasks from Supabase, and lets users start wallet sign-in.
 
 ## 2. Authentication and shared bookings
 

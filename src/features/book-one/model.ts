@@ -1,5 +1,4 @@
 export const categories = ["Cleaning", "Hair & beauty", "Tutoring", "Repairs", "Tech & design", "Errands"] as const;
-export const areas = ["North Campus", "Main Campus", "Off Campus", "Online"] as const;
 
 export type Category = (typeof categories)[number];
 export type View = "Browse tasks" | "Posted tasks" | "Sent applications" | "Bookings";

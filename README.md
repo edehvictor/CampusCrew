@@ -13,15 +13,11 @@ npm.cmd run dev
 
 Use the address printed in the terminal, usually http://localhost:3000. Keep that terminal running while you edit. Next.js refreshes the app when you save. Press Ctrl+C to stop it. On macOS or Linux, use `npm` in place of `npm.cmd`.
 
-No account, wallet, or environment variables are needed for Book One.
+Use the connected pilot setup below to browse real tasks and sign in. If the required configuration is missing, the app shows an availability message.
 
-## Try Book One
+## Test without a wallet
 
-- Open the sample cleaning task. View the applications, select the provider, simulate funding, submit a completion note, and approve the simulated payout.
-- Post a task to see it in Posted tasks. Apply to someone else’s sample task to see it in Sent applications.
-- Use category and service-area filters to find a task. Refresh the page to check that your demo changes persist.
-
-The browser stores demo bookings for this local address. G$ funding, payouts, and refunds are simulated.
+Run `npm test` for the booking tests. Call `makeTaskFixtures()` from `tests/fixtures/book-one.mts` in a test to get fresh tasks and applications without writing to Supabase.
 
 ## Run the connected G$ pilot
 
@@ -41,6 +37,6 @@ On the same computer, use `localhost` consistently across the browser, Supabase'
 
 `src/app` contains Next.js entry points and shared styling. `src/components` contains the marketplace shell. `src/features/book-one` contains the booking board, task views, and browser state. See ROADMAP.md for the build sequence, DESIGN.md for layout and brand conventions, and AGENTS.md for repo guidance.
 
-`npm run lint` and `npm run build` verify the app. Use a separate terminal if the dev server is running.
+`npm run lint`, `npm test`, and `npm run build` verify the app. Use a separate terminal if the dev server is running.
 
 Based on the [Chucks1093 Next.js server template](https://github.com/Chucks1093/templates/tree/main/nextjs-server-template).

@@ -264,8 +264,8 @@
 .booking-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
 .completion-note { margin-top: 12px; padding: 9px 11px; border-radius: 8px; background: var(--background); }
 
-.demo-note { display: flex; align-items: flex-start; gap: 6px; margin-top: 18px; color: var(--muted); font-size: 11px; }
-.demo-note svg { flex: 0 0 auto; color: var(--brand); }
+.payment-note { display: flex; align-items: flex-start; gap: 6px; margin-top: 18px; color: var(--muted); font-size: 11px; }
+.payment-note svg { flex: 0 0 auto; color: var(--brand); }
 .empty-message { padding: 14px 15px; color: var(--muted); font-size: 13px; }
 .request-next .empty-message { padding: 8px 0 0; }
 .request-detail-empty { display: grid; align-content: center; justify-items: center; gap: 9px; padding: 25px; color: var(--muted); }

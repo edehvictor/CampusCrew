@@ -13,14 +13,13 @@ export type DialogKind = keyof typeof dialogCopy;
 type Props = {
   kind: DialogKind;
   areas: readonly string[];
-  demo: boolean;
   busy: boolean;
   error: string;
   onDismiss: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 };
 
-export function RequestDialog({ kind, areas, demo, busy, error, onDismiss, onSubmit }: Props) {
+export function RequestDialog({ kind, areas, busy, error, onDismiss, onSubmit }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
   const copy = dialogCopy[kind];
 
@@ -53,7 +52,7 @@ export function RequestDialog({ kind, areas, demo, busy, error, onDismiss, onSub
           </>
         )}
         {kind !== "complete" && (
-          <label>{kind === "post" ? `Budget (${demo ? "demo G$" : "G$"})` : `Proposed price (${demo ? "demo G$" : "G$"})`}
+          <label>{kind === "post" ? "Budget (G$)" : "Proposed price (G$)"}
             <input name="amount" type="number" min={1} max={1000000000} step={1} required autoFocus={kind === "quote"} />
           </label>
         )}

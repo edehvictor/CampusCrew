@@ -1,4 +1,4 @@
-import { ArrowLeft, Banknote, CalendarDays, CheckCircle2, ChevronDown, ClipboardList, Info, MapPin, Send, Wallet } from "lucide-react";
+import { ArrowLeft, CalendarDays, ChevronDown, ClipboardList, Info, MapPin, Send, Wallet } from "lucide-react";
 import { BookingPayment } from "./booking-payment";
 import type { PaymentOperation } from "./pilot-types";
 import { CategoryIcon } from "./category-icon";
@@ -11,8 +11,7 @@ type Props = {
   onQuote: () => void;
   onComplete: () => void;
   busy: boolean;
-  payment?: { enabled: boolean; submit: (operation: PaymentOperation) => void };
-  onChangeStatus: (from: Status, to: Status, message: string) => void;
+  payment: { enabled: boolean; submit: (operation: PaymentOperation) => void };
 };
 
 const statusTone: Record<Status, string> = {
@@ -24,7 +23,7 @@ const statusTone: Record<Status, string> = {
   Refunded: "neutral",
 };
 
-export function RequestDetail({ job, onBack, onAccept, onQuote, onComplete, onChangeStatus, busy, payment }: Props) {
+export function RequestDetail({ job, onBack, onAccept, onQuote, onComplete, busy, payment }: Props) {
   const accepted = job.quotes.find(quote => quote.id === job.accepted);
   const ownQuote = job.quotes.find(quote => quote.own);
   const booking = job.own || accepted?.own ? accepted : undefined;
@@ -71,7 +70,7 @@ export function RequestDetail({ job, onBack, onAccept, onQuote, onComplete, onCh
               </div>
               <div className="quote-action">
                 <strong>{price(quote.amount)}</strong>
-                <button className="button button-primary" type="button" disabled={busy || (payment && !payment.enabled)} onClick={() => onAccept(quote)}>Select provider</button>
+                <button className="button button-primary" type="button" disabled={busy || !payment.enabled} onClick={() => onAccept(quote)}>Select provider</button>
               </div>
             </article>
           ))}
@@ -99,31 +98,11 @@ export function RequestDetail({ job, onBack, onAccept, onQuote, onComplete, onCh
           <h3>Booking with {booking.provider}</h3>
           <p className="quote-note">{booking.note}</p>
           {job.completion && <div className="completion-note"><strong>Completion note</strong><p>{job.completion}</p></div>}
-          {payment ? <BookingPayment job={job} busy={busy} enabled={payment.enabled} submit={payment.submit} onComplete={onComplete} /> : <div className="booking-actions">
-            {job.status === "Awaiting funding" && (
-              <button type="button" className="button button-primary" onClick={() => onChangeStatus("Awaiting funding", "Funded", "Demo funding confirmed.")}>
-                <Wallet size={16} aria-hidden="true" /> Simulate funding
-              </button>
-            )}
-            {job.status === "Funded" && (
-              <>
-                <button type="button" className="button button-primary" onClick={onComplete}>Submit completion</button>
-                <button type="button" className="button button-secondary" onClick={() => onChangeStatus("Funded", "Refunded", "Demo refund recorded.")}>Simulate cancellation</button>
-              </>
-            )}
-            {job.status === "Ready for review" && (
-              <button type="button" className="button button-primary" onClick={() => onChangeStatus("Ready for review", "Paid", "Demo payout recorded.")}>
-                <Banknote size={16} aria-hidden="true" /> Approve and simulate payout
-              </button>
-            )}
-            {job.status === "Paid" && <span className="status" data-tone="positive"><CheckCircle2 size={14} aria-hidden="true" /> Demo payout recorded</span>}
-            {job.status === "Refunded" && <span className="status" data-tone="neutral">Demo refund recorded</span>}
-          </div>}
+          <BookingPayment job={job} busy={busy} enabled={payment.enabled} submit={payment.submit} onComplete={onComplete} />
         </section>
       )}
 
-      {payment ? (!payment.enabled && !booking && <p className="demo-note"><Info size={16} aria-hidden="true" /> Payment setup is required before selecting a provider.</p>) :
-        <p className="demo-note"><Info size={16} aria-hidden="true" /> G$ payments are simulated. Bookings are saved in this browser.</p>}
+      {!payment.enabled && !booking && <p className="payment-note"><Info size={16} aria-hidden="true" /> Payment setup is required before selecting a provider.</p>}
     </section>
   );
 }

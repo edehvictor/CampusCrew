@@ -374,7 +374,6 @@ export function PilotBoard({ auth }: { auth: SupabaseClient }) {
       <button type="button" className="text-button" onClick={() => { void load().then(() => setBanner("")).catch(cause => setBanner(message(cause))); }}>
         <RotateCw size={15} aria-hidden="true" /> Refresh tasks
       </button>
-      {goodDollarEnvironment === "development" && <span className="status" data-tone="waiting">Development G$</span>}
       {banner && <p role="status">{banner}</p>}
     </div>
   );
@@ -382,7 +381,18 @@ export function PilotBoard({ auth }: { auth: SupabaseClient }) {
 
   return (
     <>
-      <BookOneBoard live={{ jobs: snapshot.jobs, accountControl, banner: notice, paymentsEnabled: snapshot.paymentsEnabled, prepare, resume, onResumed: () => setResume(null), mutate, pay }} />
+      <BookOneBoard live={{
+        jobs: snapshot.jobs,
+        accountControl,
+        logout: account ? { run: () => { void handle(signOut, true); }, pending: busy } : undefined,
+        banner: notice,
+        paymentsEnabled: snapshot.paymentsEnabled,
+        prepare,
+        resume,
+        onResumed: () => setResume(null),
+        mutate,
+        pay,
+      }} />
       {panel && <PilotDialog key={panel} panel={panel} profile={profile} request={selected} connectedAddress={address}
         accountWallet={account?.wallet} verified={Boolean(account?.verified)} busy={busy} error={error}
         onClose={close} onConnect={() => { void chooseWallet(); }} onSignIn={() => { void handle(signIn); }}

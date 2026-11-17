@@ -1,4 +1,4 @@
-import { BriefcaseBusiness, ChevronRight, ClipboardList, Compass, Menu, Plus, Send, X } from "lucide-react";
+import { BriefcaseBusiness, ChevronRight, ClipboardList, Compass, LogOut, Menu, Plus, Send, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import type { View } from "@/features/book-one/model";
 import "./marketplace-shell.css";
@@ -20,10 +20,11 @@ type Props = {
   onNavigate: (view: View) => void;
   onPost: () => void;
   accountControl?: ReactNode;
+  logout?: { run: () => void; pending: boolean };
   children: ReactNode;
 };
 
-export function MarketplaceShell({ view, onNavigate, onPost, accountControl, children }: Props) {
+export function MarketplaceShell({ view, onNavigate, onPost, accountControl, logout, children }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   function navigate(next: View) {
@@ -58,6 +59,19 @@ export function MarketplaceShell({ view, onNavigate, onPost, accountControl, chi
             </div>
           ))}
         </nav>
+        {logout && (
+          <div className="sidebar-footer">
+            <button
+              className="navigation-item"
+              type="button"
+              disabled={logout.pending}
+              onClick={() => { setMenuOpen(false); logout.run(); }}
+            >
+              <LogOut aria-hidden="true" size={18} />
+              <span>Log out</span>
+            </button>
+          </div>
+        )}
       </aside>
 
       <div className="workspace-main">
