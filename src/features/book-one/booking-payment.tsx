@@ -14,27 +14,27 @@ export function BookingPayment({ job, busy, enabled, submit, onComplete }: Props
   const active = job.status === "Funded" || job.status === "Ready for review";
   const settled = job.status === "Paid" || job.status === "Refunded";
   const refundAfter = job.payment?.refundAfter;
-  const canRefund = !job.own || job.payment?.requesterRefundAvailable;
+  const canRefund = job.payment?.requesterRefundAvailable;
 
   return (
     <>
       <div className="booking-actions">
         {enabled && job.status === "Awaiting funding" && job.own && (
           <button type="button" className="button button-primary" disabled={busy} onClick={() => submit("fund")}>
-            <Wallet size={16} aria-hidden="true" /> Fund with G$
+            <Wallet size={16} aria-hidden="true" /> Fund with test USDC
           </button>
         )}
-        {job.status === "Awaiting funding" && !job.own && <span className="status" data-tone="waiting">Waiting for the task owner to fund</span>}
-        {job.status === "Funded" && !job.own && (
+        {enabled && job.status === "Awaiting funding" && !job.own && <span className="status" data-tone="waiting">Waiting for the task owner to fund</span>}
+        {enabled && job.status === "Funded" && !job.own && (
           <button type="button" className="button button-primary" disabled={busy} onClick={onComplete}>Submit completion</button>
         )}
-        {job.status === "Ready for review" && job.own && (
+        {enabled && job.status === "Ready for review" && job.own && (
           <button type="button" className="button button-primary" disabled={busy} onClick={() => submit("release")}>
-            <Banknote size={16} aria-hidden="true" /> Approve and release G$
+            <Banknote size={16} aria-hidden="true" /> Approve and release test USDC
           </button>
         )}
-        {active && canRefund && (
-          <button type="button" className="button button-secondary" disabled={busy} onClick={() => submit("refund")}>Refund G$</button>
+        {enabled && active && canRefund && (
+          <button type="button" className="button button-secondary" disabled={busy} onClick={() => submit("refund")}>Reclaim contribution</button>
         )}
         {enabled && (!settled || !job.payment?.settlementTx) && (
           <button type="button" className="button button-secondary" disabled={busy} onClick={() => submit("sync")}>
@@ -42,13 +42,13 @@ export function BookingPayment({ job, busy, enabled, submit, onComplete }: Props
           </button>
         )}
       </div>
-      {active && job.own && refundAfter && !canRefund && (
+      {enabled && active && job.own && refundAfter && !canRefund && (
         <p className="quote-note">Task owner refund available {new Date(refundAfter * 1000).toLocaleString()} if the booking is still active.</p>
       )}
-      {!enabled && !settled && <p className="quote-note">G$ booking payments are awaiting pilot configuration.</p>}
+      {!enabled && !settled && <p className="quote-note">Provider selected. Stellar Testnet escrow funding is being connected. No payment has been made for this booking.</p>}
       <div className="booking-receipts">
-        {job.payment?.fundingTx && <a href={`https://celoscan.io/tx/${job.payment.fundingTx}`} target="_blank" rel="noreferrer">Funding receipt on Celo</a>}
-        {job.payment?.settlementTx && <a href={`https://celoscan.io/tx/${job.payment.settlementTx}`} target="_blank" rel="noreferrer">Settlement receipt on Celo</a>}
+        {job.payment?.fundingTx && <a href={`https://stellar.expert/explorer/testnet/tx/${job.payment.fundingTx}`} target="_blank" rel="noreferrer">Funding receipt on Stellar Testnet</a>}
+        {job.payment?.settlementTx && <a href={`https://stellar.expert/explorer/testnet/tx/${job.payment.settlementTx}`} target="_blank" rel="noreferrer">Settlement receipt on Stellar Testnet</a>}
       </div>
     </>
   );

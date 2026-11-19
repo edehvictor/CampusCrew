@@ -5,7 +5,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Campuscrew | Book local services",
-  description: "Book local services on your own or with neighbours and pay with G$.",
+  description: "Book local services on your own or with neighbours. Built on Stellar.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

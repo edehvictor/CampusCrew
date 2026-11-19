@@ -33,7 +33,7 @@ export type Job = {
 };
 
 const number = new Intl.NumberFormat("en-NG");
-export const price = (value: number) => `${number.format(value)} G$`;
+export const price = (value: number) => `${number.format(value)} USDC`;
 
 export function isInView(job: Job, view: View) {
   switch (view) {

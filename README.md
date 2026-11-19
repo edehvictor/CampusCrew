@@ -1,42 +1,55 @@
-# Campuscrew
+# CampusCrew
 
-Book local services on your own or with neighbours and pay with G$.
+Book local services on your own or with neighbours. Built on Stellar.
 
 ## Run locally
 
-Open this folder in VS Code and use its integrated terminal. Use Node.js 24, which includes npm. Check your version with `node --version`.
+Open this existing CampusCrew folder in VS Code. Use Node.js 24 and run:
 
 ```powershell
 npm.cmd ci
 npm.cmd run dev
 ```
 
-Use the address printed in the terminal, usually http://localhost:3000. Keep that terminal running while you edit. Next.js refreshes the app when you save. Press Ctrl+C to stop it. On macOS or Linux, use `npm` in place of `npm.cmd`.
+Open the address printed in the terminal, usually http://localhost:3000. Keep one dev server running. Next.js refreshes when you save. Press Ctrl+C to stop the server. On macOS or Linux, use `npm` in place of `npm.cmd`.
 
-Use the connected pilot setup below to browse real tasks and sign in. If the required configuration is missing, the app shows an availability message.
+## Configure Stellar onboarding
 
-## Test without a wallet
+1. Use your existing development Supabase project, or create a development project for the pilot.
+2. In Supabase SQL Editor, run `supabase/migrations/20261119000100_stellar_onboarding.sql` once. It creates the Stellar profiles, tasks, applications, booking records, login challenges, and sessions.
+3. Put `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `.env.local`, following `.env.example`. Keep the service-role key private. Existing values can be reused. Reown and the Supabase Ethereum wallet provider are no longer needed for this onboarding flow.
+4. Restart Next.js after changing environment variables. Refresh the page and choose **Connect wallet**.
+5. Connect Freighter / Varial or xBull. Sign the CampusCrew login message and complete your profile. To apply for work, include the service category and area in your profile.
 
-Run `npm test` for the booking tests. Call `makeTaskFixtures()` from `tests/fixtures/book-one.mts` in a test to get fresh tasks and applications without writing to Supabase.
+The app uses Stellar Testnet. A browser wallet connection is followed by a server-verified SEP-53 signed challenge. Challenges expire after five minutes, are bound to the browser and origin, and can create a session only once. Login cookies are HTTP-only and sessions can be revoked on sign-out. Wallet ownership is separate from provider skill or campus identity checks.
 
-## Run the connected G$ pilot
+Stellar sign-in uses its own session cookie. Earlier Ethereum/Supabase browser sessions do not authenticate the Stellar API. The original pilot migration and its data are retained. Stellar records have their own tables and explicit Testnet/USDC labels.
 
-1. Create a development Supabase project and enable the Ethereum Web3 wallet provider in Authentication. Add `http://localhost:3000/` to the allowed redirect URLs. If the local port changes, allow that origin too.
-2. Apply `supabase/migrations/20261116000100_book_one.sql` in the project's SQL editor or with Supabase migrations.
-3. Create a Reown project for WalletConnect. Copy `.env.example` to `.env.local` and fill in the Reown project ID, Supabase project URL, publishable key, and server service-role key. Keep the service-role key and any private RPC URL in that local file. Restart Next.js and use `http://localhost:3000` for wallet sign-in on this computer.
-4. For funding, deploy `contracts/BookOneEscrow.sol` with GoodDollar's development G$ token on Celo as the constructor argument (`0xFa51eFDc0910CCdA91732e6806912Fa12e2FD475`). Put the deployed address in `BOOK_ONE_ESCROW_ADDRESS`. Keep `NEXT_PUBLIC_GOODDOLLAR_ENV=development` for the pilot. The dev identity and token run on Celo with development G$. Celo wallet transactions may need gas.
-5. Use two browser profiles so the wallet sessions stay independent. Complete both Campuscrew profiles and verify with GoodDollar. In the second profile, include the category and area of the first profile's task. Post, apply, refresh, select the provider, and fund. Submit completion as the provider, then approve payout as the task owner. Compare the funding and settlement receipts in both sessions.
+## Booking stage
 
-Pilot refund rules: the provider can refund a funded booking. The task owner can refund it after seven days if G$ is still held. Review those rules and the contract before a production rollout. If a payment was sent and the app is still waiting, use **Refresh payment** in the booking.
+Users can sign in, save profiles, post tasks with test USDC budgets, apply, compare applications, and select a provider. The selected booking waits for funding.
 
-On the same computer, use `localhost` consistently across the browser, Supabase's allowlist, and Reown. For a browser on a phone, use a reachable HTTPS development origin that the providers allow.
+The Soroban escrow draft is in `contracts/escrow`. Its connection to the browser and server is pending. The server rejects payment and completion requests until that integration is implemented. Windows Application Control blocked the original contract checks, so the contract's 13 Rust tests and WebAssembly build are still unverified. The prepared `.github/workflows/contracts.yml` can run checks on Linux after publication.
 
-[Supabase Web3 authentication](https://supabase.com/docs/guides/auth/auth-web3) · [Reown project setup](https://docs.reown.com/appkit/next/core/installation) · [GoodDollar development token](https://docs.gooddollar.org/for-developers/developer-guides/how-to-integrate-the-gusd-token)
+## Test
 
-## Working on the app
+```powershell
+npm.cmd run lint
+npm.cmd test
+npm.cmd run build
+```
 
-`src/app` contains Next.js entry points and shared styling. `src/components` contains the marketplace shell. `src/features/book-one` contains the booking board, task views, and browser state. See ROADMAP.md for the build sequence, DESIGN.md for layout and brand conventions, and AGENTS.md for repo guidance.
+Fixtures live in `tests/fixtures`. Call `makeTaskFixtures()` in a test for independent sample data. The app loads real tasks from Supabase.
 
-`npm run lint`, `npm test`, and `npm run build` verify the app. Use a separate terminal if the dev server is running.
+Run Rust checks from this same project root:
+
+```bash
+cargo fmt --check
+cargo test --locked
+cargo clippy --locked --all-targets -- -D warnings
+cargo build --locked --target wasm32v1-none --release
+```
+
+See ROADMAP.md for the Stellar migration and buildathon delivery targets, DESIGN.md for layout and brand conventions, and AGENTS.md for repository guidance.
 
 Based on the [Chucks1093 Next.js server template](https://github.com/Chucks1093/templates/tree/main/nextjs-server-template).

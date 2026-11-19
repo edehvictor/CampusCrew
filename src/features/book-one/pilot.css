@@ -8,6 +8,24 @@
 }
 
 .pilot-account { min-width: 0; }
+.recording-profile { position: relative; }
+.recording-profile summary { cursor: pointer; list-style: none; }
+.recording-profile summary::-webkit-details-marker { display: none; }
+.recording-profile-card {
+  position: absolute;
+  z-index: 4;
+  right: 0;
+  top: calc(100% + 8px);
+  display: grid;
+  gap: 3px;
+  min-width: 170px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.recording-profile-card span { color: var(--muted); font-size: 11px; }
 .pilot-profile-button {
   display: grid;
   max-width: 128px;

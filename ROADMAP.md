@@ -1,23 +1,70 @@
-# Campuscrew roadmap
+# Stellar buildathon roadmap
 
-## 1. Verify the connected Book One app
+The delivery order below follows the supplied buildathon roadmap. Each checkpoint requires its acceptance check to pass before being presented as shipped.
 
-Check the task board on desktop and mobile, including the empty state. Keep fixture data under tests and run a clean build before sharing the staging URL.
+## Event requirements checked November 18, 2026
 
-Exit check: staging loads on two phones, displays real tasks from Supabase, and lets users start wallet sign-in.
+Source: [Stellar Buildathon application](https://docs.google.com/forms/d/e/1FAIpQLSf29BJ5Oto9R7PS_foAbfVzZmn6LYeolic34l1ryY1H-T3JfA/viewform). The organizer's [November 18 post](https://x.com/Stellar_Nigeria/status/2123069878995230904) links to a longer X article. The post summary was accessible, but the full article was not.
 
-## 2. Authentication and shared bookings
+- The form describes a one-week buildathon with workshops, office hours, and a live Builder Showcase.
+- Participants must be Stellar Builder's Circle members in Nigeria or Ghana. Only the team lead submits one registration per team.
+- Previous SCF funding recipients, Instawards sprint participants, and people currently in the SCF or Instawards pipeline are excluded from winning. Eligibility is verified by the organizers.
+- The form asks shortlisted Top 10 teams about in-person availability on December 4 or 5 in Lagos or Accra. It does not map each date to a city.
+- The top two eligible projects from each location may be recommended for SCF Instawards of up to USD 15,000 in XLM per project. Recommendation is a further funding step.
+- The accessible official form does not state the registration deadline, daily workshop dates, judging rubric, or final project submission cutoff. Reposts of an earlier announcement mention November 21. Confirm the official cutoff and timezone, and plan to register promptly.
 
-Let visitors browse. Use WalletConnect for wallet-first sign-in and require current GoodDollar verification on Celo before posting or applying. Start with the UNN Nsukka service area. Ask for a display name and location after sign-in. People who offer services add their categories, coverage areas, and a short bio before applying. Store profiles, tasks, applications, and bookings in Supabase and enforce ownership and provider selection on the server.
+Application positioning: CampusCrew helps students book local providers individually or with neighbours, with individual payments, shared contributions, payouts, and refunds implemented through Stellar escrow. Select Soroban Smart Contracts and Payments and Stablecoins as the planned features. Describe the existing local prototype and Stellar migration stage accurately. Wallet sign-in proves address ownership and does not establish provider expertise or unique-human identity.
 
-Exit check: use two separate browser sessions to post, apply, choose a provider, and exchange a completion note. Confirm only authorized accounts can perform each action and only one provider can be selected.
+Before December 4, aim to have the deployed Testnet app, contract address, confirmed receipts for all three demo journeys, a public repository, and a backup demo ready. These are our delivery targets. The form does not publish a detailed final-submission checklist.
 
-## 3. Celo and G$ pilot
+## 1. Escrow foundation
 
-Use the linked wallet at payment. First prove funding, release, and refund with test transactions, then add a capped G$ rebooking credit for repeat use. Define cancellation and dispute rules before a paid pilot. Document the contract, transaction evidence, and the volume of G$ used.
+Implement a single Soroban escrow supporting one contributor or several contributors. Keep authorization, provider acceptance, contribution accounting, release, dispute handling, and refunds on-chain.
 
-Exit check: two accounts complete one booking with independently verifiable funding and release. A repeat booking can redeem the credit once. Track time to first application, completed bookings, 30-day rebooking, and G$ redeemed.
+Current implementation: `contracts/escrow/src/lib.rs`, with tests in `contracts/escrow/src/test.rs`.
+
+Local execution is currently blocked by Windows Application Control. The contract implementation has not yet passed its 13 tests or a WebAssembly build. The prepared Linux CI workflow also needs to run before this checkpoint can be marked complete.
+
+Acceptance: formatting, contract tests, Clippy, and a release WebAssembly build pass. Test signature requirements, replay attempts, incomplete groups, rounding, expiry, cancellation, and failure rollback.
+
+## 2. Stellar authentication and profiles
+
+Implemented in the existing checkout: Stellar Wallets Kit with Freighter / Varial and xBull, server-verified SEP-53 login, browser-bound single-use challenges, HTTP-only revocable sessions, profile completion, and Stellar task/application/provider-selection APIs. The active frontend uses Testnet/USDC labels. The GoodDollar verification and Celo wallet flow have been removed from the runtime.
+
+The migration `supabase/migrations/20261119000100_stellar_onboarding.sql` has been applied to the development Supabase project. Signed login, session reads, challenge replay rejection, logout, and session revocation passed against the local API on November 19, 2026. The browser wallet approval flow still needs a user test. Payment and completion actions currently return an explicit integration-pending error. Database tests also run the migration in in-memory PostgreSQL, including authorization and retry checks.
+
+Replace the existing frontend's Reown/wagmi Ethereum wallet flow with Stellar wallet selection and signing. Keep the existing profile fields and grouped navigation. Use Supabase for profiles and task data.
+
+Implement server-issued, origin-bound, expiring login challenges. Verify Ed25519 signatures on the server, consume challenges once, and issue secure sessions. Check the wallet and Testnet network again before payment signing.
+
+Add a Stellar-specific database migration for wallet addresses and booking records. Keep network, asset identity, contract address, participant shares, and transaction hashes on each booking. Replace GoodDollar identity requirements with profile completion and wallet ownership checks. Decide any additional campus identity checks with the pilot users.
+
+Acceptance: two browser sessions sign in as different Stellar wallets, complete profiles, post a task, apply, and select a provider. Refresh preserves each account's session. Failed and replayed login challenges are rejected. The existing app's Celo authentication has been removed from the Stellar runtime.
+
+## 3. Individual Testnet booking
+
+Deploy the escrow to Stellar Testnet with the verified test USDC asset. Connect creation, provider acceptance, funding, completion submission, approval, and payout. Store completion notes privately in application data and verify payment state from Stellar RPC.
+
+Acceptance: a reviewer can open the deployed app, complete a booking with two test wallets, and inspect the confirmed contract, funding transaction, and payout. A failed, pending, mismatched, or repeated transaction cannot advance the booking incorrectly. Reloading recovers a confirmed payment.
 
 ## 4. Book Together
 
-Use Book One activity to identify services that neighbours can realistically share. Pilot shared booking with one service and one location after the individual booking and payment flow has been tested with real users.
+Add invitations, participant wallet addresses, fixed agreed contributions, a funding deadline, and remaining-funding progress. Confirm the plan before contract creation. Each contributor signs and pays their own share. Display the organizer's approval role and the resolver's authority before funding.
+
+Acceptance: four residents fund one booking through the app and the provider receives one payout. In a second booking, an incomplete group expires and each actual contributor can reclaim their own deposit. Amounts, status, and receipts survive refresh and retries.
+
+## 5. Provider discovery and notifications
+
+Add provider discovery by service and coverage area, availability, and a request-a-quote path that creates the same booking structure. Notify participants of applications, selection, funding, completion, disputes, and expiry. Add reporting and moderation controls needed by the pilot.
+
+Acceptance: both a posted-task journey and a provider-profile journey reach the same funded-booking flow. Share exact service addresses only with authorized participants.
+
+## 6. Pilot and submission
+
+Recruit one lodge, four residents, and two providers while engineering continues. Validate a real shared-service quote. Test mobile and desktop with separate wallets. Publish setup instructions, deployment details, known limitations, and a backup demo.
+
+Demonstrate three journeys with test funds: individual completion and payout, shared funding and payout, and expired-funding refunds.
+
+Measure tasks receiving suitable applications, time to first application, completed bookings, successfully funded groups, returning providers, repeat bookings, cancellations, and disputes. Count actual confirmed transactions, including group contributions, rather than assuming two transactions per booking.
+
+Before a paid launch, complete the contract review and confirm an end-to-end funding and cash-out route with the selected payment partner.

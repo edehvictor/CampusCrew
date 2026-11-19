@@ -42,3 +42,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Rust build outputs and Soroban test snapshots
+/target/
+/contracts/escrow/test_snapshots/

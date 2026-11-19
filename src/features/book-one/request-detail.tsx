@@ -70,7 +70,7 @@ export function RequestDetail({ job, onBack, onAccept, onQuote, onComplete, busy
               </div>
               <div className="quote-action">
                 <strong>{price(quote.amount)}</strong>
-                <button className="button button-primary" type="button" disabled={busy || !payment.enabled} onClick={() => onAccept(quote)}>Select provider</button>
+                <button className="button button-primary" type="button" disabled={busy} onClick={() => onAccept(quote)}>Select provider</button>
               </div>
             </article>
           ))}
@@ -102,7 +102,7 @@ export function RequestDetail({ job, onBack, onAccept, onQuote, onComplete, busy
         </section>
       )}
 
-      {!payment.enabled && !booking && <p className="payment-note"><Info size={16} aria-hidden="true" /> Payment setup is required before selecting a provider.</p>}
+      {!payment.enabled && !booking && <p className="payment-note"><Info size={16} aria-hidden="true" /> You can post, apply, and select a provider. Stellar escrow funding is being connected.</p>}
     </section>
   );
 }

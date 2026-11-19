@@ -52,8 +52,8 @@ export function RequestDialog({ kind, areas, busy, error, onDismiss, onSubmit }:
           </>
         )}
         {kind !== "complete" && (
-          <label>{kind === "post" ? "Budget (G$)" : "Proposed price (G$)"}
-            <input name="amount" type="number" min={1} max={1000000000} step={1} required autoFocus={kind === "quote"} />
+          <label>{kind === "post" ? "Budget (test USDC)" : "Proposed price (test USDC)"}
+            <input name="amount" type="number" min={0.01} max={1000000} step={0.01} required autoFocus={kind === "quote"} />
           </label>
         )}
         {kind === "quote" && <label>Availability<input name="availability" required maxLength={80} /></label>}

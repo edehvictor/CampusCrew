@@ -1,13 +1,12 @@
-import { ShieldCheck, Wallet, X } from "lucide-react";
+import { Wallet, X } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { categories, type Job } from "./model";
 import { pilotAreas, profileSchema, type PilotProfile } from "./pilot-types";
 
-export type PilotPanel = "wallet" | "profile" | "verify" | "account";
+export type PilotPanel = "wallet" | "profile" | "account";
 const titles = {
   wallet: "Connect your wallet",
   profile: "Complete your profile",
-  verify: "Verify with GoodDollar",
   account: "Your Campuscrew account",
 };
 
@@ -17,21 +16,18 @@ type Props = {
   request?: Job;
   connectedAddress?: string;
   accountWallet?: string;
-  verified: boolean;
   busy: boolean;
   error: string;
   onClose: () => void;
   onConnect: () => void;
   onSignIn: () => void;
   onSave: (profile: PilotProfile) => void;
-  onVerify: () => void;
-  onCheck: () => void;
   onEdit: () => void;
   onSignOut: () => void;
 };
 
 export function PilotDialog(props: Props) {
-  const { panel, profile, request, connectedAddress, accountWallet, verified, busy, error } = props;
+  const { panel, profile, request, connectedAddress, accountWallet, busy, error } = props;
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [formError, setFormError] = useState("");
   const [offerServices, setOfferServices] = useState(Boolean(request || profile?.skills.length));
@@ -73,7 +69,8 @@ export function PilotDialog(props: Props) {
       </header>
       {panel === "wallet" && (
         <div className="pilot-steps">
-          <p>Use a Celo wallet to sign in, earn G$, and fund bookings at UNN Nsukka.</p>
+          <p>Connect a Stellar wallet, sign in, and complete your profile to post tasks or offer services at UNN Nsukka.</p>
+          <p>Use Freighter / Varial or xBull and select Stellar Testnet in your wallet.</p>
           {connectedAddress && <p className="pilot-wallet">{connectedAddress}</p>}
           <button className="button button-primary" type="button" disabled={busy} onClick={connectedAddress ? props.onSignIn : props.onConnect}>
             <Wallet size={17} aria-hidden="true" /> {connectedAddress ? "Sign in with wallet" : "Choose a wallet"}
@@ -114,21 +111,12 @@ export function PilotDialog(props: Props) {
           <button className="button button-primary" type="submit" disabled={busy}>{busy ? "Saving…" : "Save profile"}</button>
         </form>
       )}
-      {panel === "verify" && (
-        <div className="pilot-steps">
-          <p>Verify your wallet with GoodDollar before you post or apply. GoodDollar handles the face check.</p>
-          {accountWallet && <p className="pilot-wallet">{accountWallet}</p>}
-          <button className="button button-primary" type="button" disabled={busy} onClick={props.onVerify}><ShieldCheck size={17} aria-hidden="true" /> Verify with GoodDollar</button>
-          <button className="button button-secondary" type="button" disabled={busy} onClick={props.onCheck}>I’ve finished, check again</button>
-        </div>
-      )}
       {panel === "account" && (
         <div className="pilot-steps">
           <p><strong>{profile?.displayName}</strong> · {profile?.area}</p>
-          <p>{verified ? "GoodDollar verified" : "GoodDollar verification needed"}</p>
+          <p>Signed in with a Stellar wallet · Testnet</p>
           <p className="pilot-wallet">{accountWallet}</p>
           <button className="button button-secondary" type="button" disabled={busy} onClick={props.onEdit}>Edit profile</button>
-          {!verified && <button className="button button-secondary" type="button" disabled={busy} onClick={props.onCheck}>Check verification</button>}
           <button className="button button-secondary" type="button" disabled={busy} onClick={props.onSignOut}>Sign out</button>
         </div>
       )}

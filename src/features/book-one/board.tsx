@@ -12,7 +12,7 @@ import "./book-one.css";
 import "./pilot.css";
 
 const viewCopy: Record<View, { title: string; introduction: string }> = {
-  "Browse tasks": { title: "Campus tasks", introduction: "Book local services on your own or with neighbours and pay with G$." },
+  "Browse tasks": { title: "Campus tasks", introduction: "Book local services on your own or with neighbours. Built on Stellar." },
   "Posted tasks": { title: "Posted tasks", introduction: "Review applications and choose a provider for your task." },
   "Sent applications": { title: "Sent applications", introduction: "Track the tasks you’ve applied for." },
   Bookings: { title: "Bookings", introduction: "Track funding, completion, and payouts for your bookings." },
@@ -139,7 +139,7 @@ export function BookOneBoard({ live }: { live: LiveBoardActions }) {
     const form = new FormData(event.currentTarget);
     const field = (name: string) => String(form.get(name) ?? "").trim();
     const amount = Number(field("amount"));
-    if (dialog !== "complete" && (!Number.isSafeInteger(amount) || amount < 1 || amount > 1000000000)) return;
+    if (dialog !== "complete" && (!Number.isFinite(amount) || amount < 0.01 || amount > 1000000)) return;
 
     void run(async () => {
       if (dialog === "post") {
@@ -210,7 +210,7 @@ export function BookOneBoard({ live }: { live: LiveBoardActions }) {
               busy={busy}
               payment={{
                 enabled: live.paymentsEnabled,
-                submit: operation => { void run(async () => { await live.pay(selected.id, operation); setNotice("G$ booking status refreshed."); }); },
+                submit: operation => { void run(async () => { await live.pay(selected.id, operation); setNotice("Stellar booking status refreshed."); }); },
               }}
             />
           ) : (

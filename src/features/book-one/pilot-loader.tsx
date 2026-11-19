@@ -1,13 +1,12 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import type { WalletConfig } from "./pilot-wallet";
 
-const PilotWallet = dynamic(() => import("./pilot-wallet").then(module => module.PilotWallet), {
+const StellarBoard = dynamic(() => import("./pilot-board").then(module => module.PilotBoard), {
   ssr: false,
-  loading: () => <main className="book-one" role="status">Loading Campuscrew…</main>,
+  loading: () => <main className="book-one" role="status">Loading CampusCrew…</main>,
 });
 
-export function PilotLoader({ config }: { config: WalletConfig }) {
-  return <PilotWallet config={config} />;
+export function PilotLoader() {
+  return <StellarBoard />;
 }

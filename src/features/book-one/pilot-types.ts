@@ -17,49 +17,32 @@ export const profileSchema = z.object({
 export type PilotProfile = z.infer<typeof profileSchema>;
 export type PilotSnapshot = {
   jobs: Job[];
-  account: {
-    wallet: `0x${string}`;
-    profile: PilotProfile | null;
-    verified: boolean;
-  } | null;
+  account: { wallet: string; profile: PilotProfile | null } | null;
   paymentsEnabled: boolean;
 };
 export type EntryIntent = { kind: "post" } | { kind: "quote"; requestId: string };
 
-const amount = z.number().int().min(1).max(1000000000);
+const amount = z.number().positive().max(1000000).multipleOf(0.01);
 const requestId = z.uuid();
 const note = z.string().trim().min(1).max(750);
 const timing = z.string().trim().min(1).max(80);
 
 export const mutationSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("profile"), profile: profileSchema }),
-  z.object({ action: z.literal("verify") }),
   z.object({
     action: z.literal("post"), requestId,
     title: z.string().trim().min(1).max(100),
-    category: z.enum(categories),
-    area: z.enum(pilotAreas),
-    timing, budget: amount, scope: note,
+    category: z.enum(categories), area: z.enum(pilotAreas), timing, budget: amount, scope: note,
   }),
   z.object({ action: z.literal("apply"), requestId, amount, availability: timing, note }),
   z.object({ action: z.literal("select"), requestId, applicationId: z.uuid() }),
   z.object({ action: z.literal("complete"), requestId, note }),
   z.object({
-    action: z.literal("payment"),
-    requestId,
+    action: z.literal("payment"), requestId,
     operation: z.enum(["fund", "release", "refund", "sync"]),
-    hash: z.string().regex(/^0x[0-9a-fA-F]{64}$/).optional(),
+    hash: z.string().regex(/^[0-9a-fA-F]{64}$/).optional(),
   }),
 ]);
 
 export type PilotMutation = z.infer<typeof mutationSchema>;
-
 export type PaymentOperation = "fund" | "release" | "refund" | "sync";
-export type PaymentInstruction = {
-  operation: Exclude<PaymentOperation, "sync">;
-  escrow: `0x${string}`;
-  token: `0x${string}`;
-  amount: string;
-  key: `0x${string}`;
-  data: `0x${string}`;
-};

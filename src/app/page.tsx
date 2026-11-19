@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default function Home() {
   const config = getPilotConfig();
-  if (config) return <PilotLoader config={config} />;
+  if (config) return <PilotLoader />;
 
   return (
     <main className="book-one">

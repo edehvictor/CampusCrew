@@ -3,6 +3,7 @@ import { getPilotConfig } from "@/features/book-one/pilot-config";
 import { authenticate, readSnapshot, runPilotMutation } from "@/features/book-one/pilot-server";
 import { PilotError } from "@/features/book-one/pilot-error";
 import { mutationSchema } from "@/features/book-one/pilot-types";
+import { requireSameOrigin } from "@/features/book-one/stellar-session";
 
 const headers = { "Cache-Control": "private, no-store" };
 
@@ -28,6 +29,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   if (!getPilotConfig()) return respond({ error: "The connected pilot is not configured." }, 503);
   try {
+    requireSameOrigin(request);
     const user = await authenticate(request);
     if (!user) return respond({ error: "Connect a wallet and sign in first." }, 401);
     const input = mutationSchema.safeParse(await request.json().catch(() => null));

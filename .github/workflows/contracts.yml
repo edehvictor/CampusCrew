@@ -1,0 +1,26 @@
+name: Stellar escrow
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  escrow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install Rust
+        run: |
+          rustup toolchain install 1.96.0 --profile minimal --component clippy --target wasm32v1-none
+          rustup default 1.96.0
+      - name: Test authorization and booking settlement
+        run: cargo test --locked
+      - name: Check Rust diagnostics
+        run: cargo clippy --locked --all-targets -- -D warnings
+      - name: Build the deployable contract
+        run: cargo build --locked --target wasm32v1-none --release
