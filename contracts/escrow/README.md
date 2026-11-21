@@ -4,7 +4,7 @@ CampusCrew helps students and neighbours find local service providers. People po
 
 The first service area is the University of Nigeria, Nsukka. Categories include cleaning, tutoring, hair and beauty, repairs, tech and design, and errands.
 
-The Stellar migration lives in the existing CampusCrew project. Run the Rust commands below from the project root. The frontend uses Stellar wallet sign-in and Testnet task data. Connecting this escrow to the frontend is the next payment milestone. Rust formatting passes; compilation and the 14 contract tests still need a successful Linux CI run because Windows Application Control blocks dependency build scripts locally.
+The Stellar migration lives in the existing CampusCrew project. Run the Rust commands below from the project root. The frontend uses Stellar wallet sign-in, test USDC task data, and wallet-signed individual escrow actions. [GitHub run 44843634439](https://github.com/edehvictor/CampusCrew/actions/runs/44843634439) passed formatting, all 14 contract tests, Clippy, and the release Wasm build. Local compilation remains blocked by Windows Application Control. The verified artifact is deployed on Testnet; see `deployments/stellar-testnet.json` for its code hash, constructor configuration and deployment receipts.
 
 ## Contract behaviour
 

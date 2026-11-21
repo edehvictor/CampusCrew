@@ -29,7 +29,7 @@ export type LiveBoardActions = {
   resume: EntryIntent | null;
   onResumed: () => void;
   mutate: (mutation: PilotMutation) => Promise<{ requestId?: string }>;
-  pay: (requestId: string, operation: PaymentOperation) => Promise<void>;
+  pay: (requestId: string, operation: PaymentOperation, note?: string) => Promise<string>;
 };
 
 export function BookOneBoard({ live }: { live: LiveBoardActions }) {
@@ -164,8 +164,7 @@ export function BookOneBoard({ live }: { live: LiveBoardActions }) {
       } else if (dialog === "complete" && selected) {
         const note = field("note");
         if (!note) throw new Error("Add your completion note.");
-        await live.mutate({ action: "complete", requestId: selected.id, note });
-        setNotice("Completion submitted for review.");
+        setNotice(await live.pay(selected.id, "submit", note));
       }
       setDialog(null);
     });
@@ -212,7 +211,7 @@ export function BookOneBoard({ live }: { live: LiveBoardActions }) {
               busy={busy}
               payment={{
                 enabled: live.paymentsEnabled,
-                submit: operation => { void run(async () => { await live.pay(selected.id, operation); setNotice("Stellar booking status refreshed."); }); },
+                submit: operation => { void run(async () => { setNotice(await live.pay(selected.id, operation)); }); },
               }}
             />
           ) : (

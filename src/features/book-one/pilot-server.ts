@@ -5,6 +5,7 @@ import type { Job } from "./model";
 import type { PilotMutation, PilotProfile, PilotSnapshot } from "./pilot-types";
 import { PilotError } from "./pilot-error";
 import { checkStellarDatabase, readStellarSession, type StellarUser } from "./stellar-session";
+import { enrichEscrowJobs, getEscrowConfig } from "./stellar-escrow-server";
 
 export const authenticate = readStellarSession;
 
@@ -22,9 +23,9 @@ export async function readSnapshot(user: StellarUser | null): Promise<PilotSnaps
     displayName: row.display_name, area: row.area, skills: row.skills, coverage: row.coverage, bio: row.bio,
   } as PilotProfile : null;
   return {
-    jobs: (board.data ?? []) as Job[],
+    jobs: await enrichEscrowJobs((board.data ?? []) as Job[], user?.wallet),
     account: user ? { wallet: user.wallet, profile: details } : null,
-    paymentsEnabled: false,
+    paymentsEnabled: Boolean(getEscrowConfig()),
   };
 }
 

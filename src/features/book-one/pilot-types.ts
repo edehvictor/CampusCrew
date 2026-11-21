@@ -45,4 +45,4 @@ export const mutationSchema = z.discriminatedUnion("action", [
 ]);
 
 export type PilotMutation = z.infer<typeof mutationSchema>;
-export type PaymentOperation = "fund" | "release" | "refund" | "sync";
+export type PaymentOperation = "create" | "accept" | "fund" | "submit" | "release" | "claim" | "cancel" | "refund" | "dispute" | "sync";

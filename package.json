@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test"
+    "test": "node --test",
+    "stellar:deploy": "node scripts/deploy-stellar-testnet.mjs",
+    "stellar:enable": "node scripts/enable-stellar-escrow.mjs",
+    "stellar:smoke": "node scripts/smoke-stellar-testnet.mjs",
+    "stellar:resolve": "node scripts/resolve-stellar-dispute.mjs"
   },
   "dependencies": {
     "@creit.tech/stellar-wallets-kit": "2.8.0",

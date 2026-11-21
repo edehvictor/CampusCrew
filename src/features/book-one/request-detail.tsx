@@ -21,6 +21,9 @@ const statusTone: Record<Status, string> = {
   "Ready for review": "waiting",
   Paid: "positive",
   Refunded: "neutral",
+  Disputed: "waiting",
+  "Refund available": "waiting",
+  Cancelled: "neutral",
 };
 
 export function RequestDetail({ job, onBack, onAccept, onQuote, onComplete, busy, payment }: Props) {

@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { after, before, beforeEach, test } from "node:test";
 import { PGlite } from "@electric-sql/pglite";
-import { Keypair } from "@stellar/stellar-sdk";
+import { Address, Keypair } from "@stellar/stellar-sdk";
 
 const db = new PGlite();
 const owner = Keypair.random().publicKey();
@@ -15,6 +15,7 @@ before(async () => {
   await db.exec("create role anon; create role authenticated; create role service_role bypassrls;");
   const sql = await readFile(new URL("../supabase/migrations/20261119000100_stellar_onboarding.sql", import.meta.url), "utf8");
   await db.exec(sql);
+  await db.exec(await readFile(new URL("../supabase/migrations/20261121000100_stellar_escrow.sql", import.meta.url), "utf8"));
 });
 
 beforeEach(async () => {
@@ -105,4 +106,50 @@ test("browser roles cannot read sessions or execute protected mutation functions
   } finally {
     await db.exec("reset role");
   }
+});
+
+async function escrow() {
+  const application = await apply();
+  await db.query("select campuscrew_stellar_select_provider($1,$2,$3)", [owner, taskId, application]);
+  const contract = Address.contract(Buffer.alloc(32, 1)).toString();
+  const token = Address.contract(Buffer.alloc(32, 2)).toString();
+  const result = await db.query("select campuscrew_stellar_prepare_escrow($1,$2,$3,$4,$5,$6) as terms", [owner,taskId,'ab'.repeat(32),contract,token,other]);
+  return {terms:result.rows[0].terms, contract, token};
+}
+
+test("escrow preparation locks the selected price and is owner-only and idempotent", async () => {
+  const {terms,contract,token} = await escrow();
+  assert.equal(terms.organizer, owner);
+  assert.equal(terms.provider, provider);
+  assert.equal(terms.amount, 10.25);
+  await assert.rejects(db.query("select campuscrew_stellar_prepare_escrow($1,$2,$3,$4,$5,$6)", [provider,taskId,'ab'.repeat(32),contract,token,other]), /Only the task owner/);
+  const retry = await db.query("select campuscrew_stellar_prepare_escrow($1,$2,$3,$4,$5,$6) as terms", [owner,taskId,'ab'.repeat(32),contract,token,other]);
+  assert.deepEqual(retry.rows[0].terms, terms);
+  await assert.rejects(db.query("select campuscrew_stellar_prepare_escrow($1,$2,$3,$4,$5,$6)", [owner,taskId,'ab'.repeat(32),token,token,other]), /different escrow/);
+});
+
+test("verified receipts are booking-bound and older responses cannot regress chain state", async () => {
+  await escrow();
+  const intentId = randomUUID();
+  const hash = 'cd'.repeat(32);
+  await db.query("insert into campuscrew_stellar_payment_intents(id,request_id,wallet,operation,tx_hash,expires_at,status) values ($1,$2,$3,'fund',$4,now()+interval '3 minutes','submitted')", [intentId,taskId,owner,hash]);
+  await assert.rejects(db.query("select campuscrew_stellar_record_escrow($1,10,'Funded','{}',$2,$3)", [taskId,intentId,'ef'.repeat(32)]), /does not match/);
+  await db.query("select campuscrew_stellar_record_escrow($1,20,'Paid','{}')", [taskId]);
+  await db.query("select campuscrew_stellar_record_escrow($1,10,'Funded','{}',$2,$3)", [taskId,intentId,hash]);
+  await db.query("select campuscrew_stellar_record_escrow($1,10,'Funded','{}',$2,$3)", [taskId,intentId,hash]);
+  const result = await db.query("select chain_state,checked_ledger,funding_tx from campuscrew_stellar_escrows where request_id=$1", [taskId]);
+  assert.equal(result.rows[0].chain_state, 'Paid');
+  assert.equal(Number(result.rows[0].checked_ledger), 20);
+  assert.equal(result.rows[0].funding_tx, hash);
+  assert.equal((await db.query("select status from campuscrew_stellar_payment_intents where id=$1",[intentId])).rows[0].status, 'confirmed');
+});
+
+test("browser roles cannot read payment intents or overwrite escrow snapshots", async () => {
+  await escrow();
+  await db.exec('set role anon');
+  try {
+    await assert.rejects(db.query('select * from campuscrew_stellar_payment_intents'), /permission denied/);
+    await assert.rejects(db.query("select campuscrew_stellar_record_escrow($1,999,'Paid','{}')", [taskId]), /permission denied/);
+    await assert.rejects(db.query('select * from campuscrew_stellar_escrows'), /permission denied/);
+  } finally { await db.exec('reset role'); }
 });

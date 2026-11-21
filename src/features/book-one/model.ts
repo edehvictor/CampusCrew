@@ -2,7 +2,7 @@ export const categories = ["Cleaning", "Hair & beauty", "Tutoring", "Repairs", "
 
 export type Category = (typeof categories)[number];
 export type View = "Browse tasks" | "Posted tasks" | "Sent applications" | "Bookings";
-export type Status = "Open" | "Awaiting funding" | "Funded" | "Ready for review" | "Paid" | "Refunded";
+export type Status = "Open" | "Awaiting funding" | "Funded" | "Ready for review" | "Paid" | "Refunded" | "Disputed" | "Refund available" | "Cancelled";
 export type Quote = {
   id: string;
   provider: string;
@@ -29,7 +29,12 @@ export type Job = {
   status: Status;
   completion?: string;
   applicationCount?: number;
-  payment?: { fundingTx: string | null; settlementTx: string | null; refundAfter: number | null; requesterRefundAvailable?: boolean } | null;
+  payment?: {
+    fundingTx: string | null; settlementTx: string | null; refundAfter: number | null;
+    operations?: ("create" | "accept" | "fund" | "submit" | "release" | "claim" | "cancel" | "refund" | "dispute")[];
+    state?: string; contract?: string; resolver?: string;
+    fundingDeadline?: number; workDeadline?: number; reviewDeadline?: number;
+  } | null;
 };
 
 const number = new Intl.NumberFormat("en-NG");

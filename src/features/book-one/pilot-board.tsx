@@ -7,7 +7,7 @@ import { BookOneBoard } from "./board";
 import { getStellarWallet } from "./pilot-wallet";
 import { PilotDialog, type PilotPanel } from "./pilot-dialog";
 import { PilotError } from "./pilot-error";
-import type { EntryIntent, PilotMutation, PilotProfile, PilotSnapshot } from "./pilot-types";
+import type { EntryIntent, PaymentOperation, PilotMutation, PilotProfile, PilotSnapshot } from "./pilot-types";
 import "./pilot.css";
 
 const blank: PilotSnapshot = { jobs: [], account: null, paymentsEnabled: false };
@@ -160,6 +160,29 @@ export function PilotBoard() {
     await load();
   }
 
+  async function pay(requestId: string, operation: PaymentOperation, note?: string): Promise<string> {
+    if (!account) throw new PilotError("Sign in before using booking payments.", 401);
+    if (operation === "sync") {
+      const result = await api<{ message: string }>("/api/stellar/booking", "POST", { action: "sync", requestId });
+      await load();
+      return result.message;
+    }
+    const kit = getStellarWallet();
+    const { address } = await kit.fetchAddress();
+    if (address !== account.wallet) throw new PilotError("Your wallet account changed. Reconnect the wallet you signed in with.", 409);
+    const network = await kit.getNetwork();
+    if (network.networkPassphrase !== Networks.TESTNET) throw new PilotError("Switch your wallet to Stellar Testnet before signing a booking transaction.", 409);
+    const prepared = await api<{ intentId: string; xdr: string; wallet: string; networkPassphrase: string }>("/api/stellar/booking", "POST", {
+      action: "prepare", requestId, operation, note,
+    });
+    if (prepared.wallet !== address || prepared.networkPassphrase !== Networks.TESTNET) throw new PilotError("The prepared wallet or network did not match.", 409);
+    const signed = await kit.signTransaction(prepared.xdr, { address, networkPassphrase: Networks.TESTNET });
+    if (signed.signerAddress && signed.signerAddress !== address) throw new PilotError("The signing wallet account changed. Refresh payment before retrying.", 409);
+    const result = await api<{ message: string }>("/api/stellar/booking", "POST", { action: "submit", intentId: prepared.intentId, xdr: signed.signedTxXdr });
+    await load();
+    return result.message;
+  }
+
   function close() {
     if (working.current) return;
     pending.current = null;
@@ -200,7 +223,7 @@ export function PilotBoard() {
         logout: account ? { run: () => { void handle(signOut, true); }, pending: busy } : undefined,
         banner: notice, paymentsEnabled: snapshot.paymentsEnabled, prepare, resume,
         onResumed: () => setResume(null), mutate,
-        pay: async () => { throw new PilotError("Stellar escrow payments are being connected. This booking has not been paid.", 503); },
+        pay,
       }} />
       {panel && <PilotDialog key={panel} panel={panel} profile={profile} request={selected}
         connectedAddress={connectedWallet} accountWallet={account?.wallet} busy={busy} error={error}

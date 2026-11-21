@@ -129,6 +129,9 @@
 .booking-receipts { display: flex; flex-wrap: wrap; gap: 7px 12px; margin-top: 10px; font-size: 12px; }
 .booking-receipts:empty { display: none; }
 .booking-receipts a { color: var(--primary-ink); }
+.escrow-terms { display: grid; gap: 8px; margin-top: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--primary-wash); }
+.escrow-terms p { color: var(--muted); font-size: 12px; line-height: 1.6; }
+.escrow-terms a { color: var(--primary-ink); }
 
 @media (max-width: 460px) {
   .pilot-connect { gap: 4px; padding-inline: 7px; font-size: 11px; }

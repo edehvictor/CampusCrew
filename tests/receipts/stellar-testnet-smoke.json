@@ -1,0 +1,28 @@
+{
+  "kind": "technical-test",
+  "network": "stellar-testnet",
+  "contract": "CCS3UK7HCGK5AQIPCJRVNMCR3HWXPD7ZCL7XMWRHGFTG46MTCBAGGZ6S",
+  "chainId": "7db730d33aafe906377636f3eed38a6222a15d1a91cb2d59954bcb107beb6fc8",
+  "testUsdcTransferred": "0",
+  "receipts": [
+    {
+      "operation": "create",
+      "hash": "12f0e8131941e96f35a7e2899041ec7b93fef430ee85af7bbf18eb08dfa9cd72",
+      "ledger": 5839775,
+      "confirmedState": "Proposed"
+    },
+    {
+      "operation": "accept",
+      "hash": "49c9ee0e50993db82776a21738df4f444f3b1e24794d122f0824c884bc7a816d",
+      "ledger": 5839776,
+      "confirmedState": "Funding"
+    },
+    {
+      "operation": "cancel",
+      "hash": "53ecbeefecce30622fa93546aa8846a4e38f05b60e29c3d56eab67a69d496c90",
+      "ledger": 5839777,
+      "confirmedState": "Refundable"
+    }
+  ],
+  "checkedAt": "2026-11-21T00:55:25.907Z"
+}
