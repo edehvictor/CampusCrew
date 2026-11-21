@@ -87,7 +87,7 @@ export function MarketplaceShell({ view, onNavigate, onPost, accountControl, log
             >
               {menuOpen ? <X size={19} aria-hidden="true" /> : <Menu size={19} aria-hidden="true" />}
             </button>
-            <span className="mobile-brand"><span className="brand-mark" aria-hidden="true" /> Campuscrew</span>
+            <span className="mobile-brand" role="img" aria-label="Campuscrew"><span className="brand-mark" aria-hidden="true" /></span>
             <span className="workspace-crumb">
               {["Home", "Explore campuses", "Browse tasks"].includes(view) ? "Marketplace" : "My activity"} <ChevronRight size={13} aria-hidden="true" /> <strong>{view}</strong>
             </span>

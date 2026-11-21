@@ -22,3 +22,5 @@ Drips Wave uses a persistent navigation column, groups actions by role, and keep
 - Set interface text and labels in Plus Jakarta Sans. Use EB Garamond for page and task titles.
 - Use the supplied mark with the Campuscrew wordmark. Use Lucide for icons and give icon-only controls an accessible name.
 - Keep category, location, budget, and application count visible in the list. Give the selected task's scope and next action room in the detail pane.
+
+- On mobile, show the brand mark alone in the header. The Home hero fills the viewport below the header and hides the illustration so the heading and actions have space.

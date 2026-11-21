@@ -1,4 +1,5 @@
 .marketplace-shell {
+  --workspace-header-height: 73px;
   min-height: 100dvh;
   display: grid;
   grid-template-columns: 236px minmax(0, 1fr);
@@ -129,19 +130,19 @@
 }
 
 @media (max-width: 760px) {
-  .marketplace-shell { display: block; }
-  .workspace-header { min-height: 64px; padding-inline: 14px; }
+  .marketplace-shell { --workspace-header-height: 76px; display: block; }
+  .workspace-header { height: var(--workspace-header-height); min-height: var(--workspace-header-height); padding-inline: 14px; }
   .workspace-crumb, .workspace-sidebar, .post-desktop { display: none; }
   .menu-button, .mobile-brand { display: inline-flex; }
   .post-mobile { display: inline; }
-  .mobile-brand { gap: 7px; font-size: 16px; }
+  .mobile-brand { gap: 0; flex: 0 0 auto; }
   .mobile-brand .brand-mark { width: 21px; height: 21px; }
   .workspace-sidebar {
     position: absolute;
-    inset: 64px 0 auto;
+    inset: var(--workspace-header-height) 0 auto;
     z-index: 3;
     height: auto;
-    max-height: calc(100dvh - 64px);
+    max-height: calc(100dvh - var(--workspace-header-height));
     border: 0;
     border-bottom: 1px solid var(--line);
     box-shadow: 0 12px 20px #24174514;

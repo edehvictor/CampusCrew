@@ -12,7 +12,7 @@ type HomeProps = {
 };
 
 function CampusLogo() {
-  return <Image src="/campuses/unn.png" alt="University of Nigeria" width={960} height={1440} className="campus-logo" />;
+  return <Image src="/campuses/unn.png" alt="University of Nigeria" width={340} height={80} className="campus-logo" />;
 }
 
 export function Home({ jobs, onPost, onBrowse, onTask }: HomeProps) {
