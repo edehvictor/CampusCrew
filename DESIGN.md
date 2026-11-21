@@ -25,4 +25,4 @@ Drips Wave uses a persistent navigation column, groups actions by role, and keep
 
 - On mobile, show the brand mark alone in the header. The Home hero fills the viewport below the header and hides the illustration so the heading and actions have space.
 
-- Use the brand mark with a delivery orbit and three sequential dots during initial loading. Respect reduced-motion preferences and never delay entry for the animation. The Home hero uses the supplied repeating grain texture at 3.5% opacity, behind content with no pointer interactions.
+- Use the brand mark with a delivery orbit and three sequential dots during initial loading. Respect reduced-motion preferences and never delay entry for the animation. The Home hero uses the supplied repeating grain texture at 60% layer opacity (the source alpha peaks at 16%, giving about 10% maximum visible grain), behind content with no pointer interactions.
