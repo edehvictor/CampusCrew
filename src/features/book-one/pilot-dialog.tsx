@@ -1,14 +1,15 @@
-import { Wallet, X } from "lucide-react";
+import { LogOut, MapPin, Pencil, Wallet, X } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { categories, type Job } from "./model";
 import { pilotAreas, profileSchema, type PilotProfile } from "./pilot-types";
 import { ProfileBalance } from "./profile-balance";
+import { WalletAddress } from "./wallet-address";
 
 export type PilotPanel = "wallet" | "profile" | "account";
 const titles = {
   wallet: "Connect your wallet",
   profile: "Complete your profile",
-  account: "Your Campuscrew account",
+  account: "Your profile",
 };
 
 type Props = {
@@ -70,8 +71,8 @@ export function PilotDialog(props: Props) {
       </header>
       {panel === "wallet" && (
         <div className="pilot-steps">
-          <p>Connect a Stellar wallet, sign in, and complete your profile to post tasks or offer services at UNN Nsukka.</p>
-          <p>Use Freighter / Varial or xBull and select Stellar Testnet in your wallet.</p>
+          <p>Sign in to post tasks, offer services, and manage bookings.</p>
+          <p>Use Freighter / Varial or xBull on Stellar Testnet.</p>
           {connectedAddress && <p className="pilot-wallet">{connectedAddress}</p>}
           <button className="button button-primary" type="button" disabled={busy} onClick={connectedAddress ? props.onSignIn : props.onConnect}>
             <Wallet size={17} aria-hidden="true" /> {connectedAddress ? "Sign in with wallet" : "Choose a wallet"}
@@ -113,13 +114,12 @@ export function PilotDialog(props: Props) {
         </form>
       )}
       {panel === "account" && (
-        <div className="pilot-steps">
-          <p><strong>{profile?.displayName}</strong> · {profile?.area}</p>
-          <p>Signed in with a Stellar wallet · Testnet</p>
-          <p className="pilot-wallet">{accountWallet}</p>
+        <div className="pilot-steps account-overview">
+          <div className="account-identity"><span className="avatar">{profile?.displayName.split(/\s+/).slice(0, 2).map(word => word[0]).join("").toUpperCase()}</span><div><strong>{profile?.displayName}</strong><p><MapPin size={12} aria-hidden="true" /> {profile?.area}</p></div><button className="button button-icon" type="button" aria-label="Edit profile" disabled={busy} onClick={props.onEdit}><Pencil size={16} aria-hidden="true" /></button></div>
+          {Boolean(profile?.skills.length) && <div className="account-service-tags">{profile?.skills.map(skill => <span key={skill}>{skill}</span>)}</div>}
+          {accountWallet && <WalletAddress address={accountWallet} />}
           {accountWallet && <ProfileBalance key={accountWallet} wallet={accountWallet} />}
-          <button className="button button-secondary" type="button" disabled={busy} onClick={props.onEdit}>Edit profile</button>
-          <button className="button button-secondary" type="button" disabled={busy} onClick={props.onSignOut}>Sign out</button>
+          <div className="account-footer"><button className="text-button" type="button" disabled={busy} onClick={props.onConnect}><Wallet size={14} aria-hidden="true" /> Reconnect wallet</button><button className="text-button" type="button" disabled={busy} onClick={props.onSignOut}><LogOut size={14} aria-hidden="true" /> Sign out</button></div>
         </div>
       )}
       {panel !== "profile" && error && <p className="form-error" role="alert">{error}</p>}

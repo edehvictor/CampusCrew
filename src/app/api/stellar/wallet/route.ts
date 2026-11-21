@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     const account = await client.getAccount(user.wallet).catch(() => { throw new PilotError("Get test XLM to activate your wallet first.", 409); });
     const transaction = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: Networks.TESTNET })
       .addOperation(Operation.changeTrust({ asset: testUsdc, limit: "1000000" })).setTimeout(180).build();
-    return NextResponse.json({ wallet: user.wallet, networkPassphrase: Networks.TESTNET, xdr: transaction.toXDR() }, { headers });
+    return NextResponse.json({ wallet: user.wallet, networkPassphrase: Networks.TESTNET, xdr: transaction.toXDR(), expiresAt: new Date(Number(transaction.timeBounds!.maxTime) * 1000).toISOString() }, { headers });
   } catch (error) {
     if (error instanceof PilotError) return NextResponse.json({ error: error.message }, { status: error.status, headers });
     return NextResponse.json({ error: "Your test wallet could not be set up right now. Refresh your balance and try again." }, { status: 503, headers });

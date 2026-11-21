@@ -6,12 +6,14 @@ Campuscrew helps people book local services on their own or with neighbours. Boo
 
 Drips Wave uses a persistent navigation column, groups actions by role, and keeps the list next to its selected issue. Campuscrew uses the same layout idea with public discovery, posted tasks, sent applications, and shared bookings. The sidebar and list stay visible alongside the detail pane on desktop. On narrow screens, the navigation is available from the header and details open as a separate view within the board.
 
-- Marketplace contains Browse tasks.
+- Marketplace contains Home, Explore campuses, and Browse tasks. Home is the default entry point; service categories and real open tasks lead into the existing task board.
 - My activity groups Posted tasks, Sent applications, and Bookings.
 - Use View applications on a posted task to compare providers and select one.
 - Primary actions are contextual. The top bar has Post a task, and a task's details show the action available in its current state.
 - Put the campus selector above the task board. UNN, Nsukka is active; other campuses display Coming soon and do not change the selected campus.
-- Keep wallet balances and the test-funds faucet inside the profile account modal, with refresh, loading, and failure states. Keep network and price-unit labels visible in the marketplace.
+- Explore campuses shows the active UNN community with its official logo and one general coming-soon card. Add other named campuses when their rollout is confirmed, rather than presenting speculative university partnerships.
+- Keep wallet balances inside the concise profile account modal, with refresh, loading, and failure states. Collapse test-wallet tools once the account and USDC trustline are ready. The copy control copies the full wallet address and only confirms success after clipboard access succeeds. Show Testnet and USDC labels in task and booking flows, not Home or Explore campuses.
+- Home opens as a campus task marketplace, lists errands alongside services, and states escrow protection in one concise line. Keep the first screen uncluttered; the three illustrated steps and open tasks can follow below the fold.
 
 ## Visual system
 

@@ -1,8 +1,9 @@
 import { ExternalLink, RotateCw, Wallet } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { WalletBalance } from "./stellar-balance";
 import { getStellarWallet } from "./pilot-wallet";
 import { Networks } from "@creit.tech/stellar-wallets-kit/types";
+import { signPreparedWalletTransaction } from "./wallet-signing";
 
 const wholeNumber = new Intl.NumberFormat("en", { maximumFractionDigits: 0 });
 
@@ -18,34 +19,78 @@ export function ProfileBalance({ wallet }: { wallet: string }) {
   const [refresh, setRefresh] = useState(0);
   const [settingUp, setSettingUp] = useState(false);
   const [notice, setNotice] = useState("");
+  const [setupStage, setSetupStage] = useState("");
+  const setupInProgress = useRef(false);
+  const balanceRef = useRef<HTMLElement>(null);
+  const [preparedUsdc, setPreparedUsdc] = useState<{ xdr: string; wallet: string; networkPassphrase: string; expiresAt: string } | null>(null);
+
+  function setupError(cause: unknown) {
+    const detail = cause instanceof Error ? cause.message
+      : cause && typeof cause === "object" && "message" in cause ? String(cause.message) : "Wallet setup could not finish.";
+    return /set the wallet|selected module/i.test(detail) ? "Reconnect your wallet using the button below, then add test USDC again."
+      : /cancel|reject|denied|declined/i.test(detail) ? "The wallet approval was cancelled. You can open the wallet again to retry." : detail;
+  }
 
   async function setup(action: "fund_xlm" | "prepare_usdc") {
+    if (setupInProgress.current) return;
+    setupInProgress.current = true;
     setSettingUp(true);
+    setSetupStage(action === "fund_xlm" ? "Requesting test XLM…" : "Preparing the USDC wallet approval…");
     setError("");
     setNotice("");
     try {
-      const response = await fetch("/api/stellar/wallet", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action }) });
+      const response = await fetch("/api/stellar/wallet", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action }), signal: AbortSignal.timeout(40_000) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
       if (action === "prepare_usdc") {
-        const kit = getStellarWallet();
-        if ((await kit.fetchAddress()).address !== wallet || data.wallet !== wallet) throw new Error("Reconnect the wallet you signed in with.");
-        if ((await kit.getNetwork()).networkPassphrase !== Networks.TESTNET || data.networkPassphrase !== Networks.TESTNET) throw new Error("Switch your wallet to Stellar Testnet first.");
-        const signed = await kit.signTransaction(data.xdr, { address: wallet, networkPassphrase: Networks.TESTNET });
-        if (signed.signerAddress && signed.signerAddress !== wallet) throw new Error("The wallet account changed. Refresh your balance.");
-        // This classic trustline transaction goes directly to Horizon; it never changes a booking's payment status.
-        const submitted = await fetch("https://horizon-testnet.stellar.org/transactions", {
-          method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({ tx: signed.signedTxXdr }), signal: AbortSignal.timeout(20_000),
-        });
-        if (!submitted.ok) throw new Error("The USDC asset could not be added. Refresh your balance before retrying.");
-        setNotice("Test USDC added. You can now receive it from the faucet.");
+        if (data.wallet !== wallet || data.networkPassphrase !== Networks.TESTNET) throw new Error("The prepared wallet or network did not match.");
+        setPreparedUsdc(data);
+        setNotice("Approval is ready. Click Open wallet and approve below.");
+        return;
       } else setNotice(data.message);
       setLoading(true);
       setRefresh(value => value + 1);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Wallet setup could not finish.");
-    } finally { setSettingUp(false); }
+      setError(setupError(cause));
+    } finally { setSettingUp(false); setSetupStage(""); setupInProgress.current = false; }
+  }
+
+  async function approveUsdc() {
+    if (setupInProgress.current || !preparedUsdc) return;
+    setupInProgress.current = true;
+    setSettingUp(true);
+    setError("");
+    setNotice("");
+    setSetupStage("Approve USDC in xBull or your selected wallet. Unlock it if prompted.");
+    // Native modal dialogs make external wallet overlays inert. Pause ours while the wallet is open.
+    const dialog = balanceRef.current?.closest("dialog");
+    const reopen = Boolean(dialog?.open);
+    if (reopen) dialog?.close();
+    try {
+      if (Date.parse(preparedUsdc.expiresAt) <= Date.now()) {
+        setPreparedUsdc(null);
+        throw new Error("This approval expired. Click Add test USDC to wallet to prepare it again.");
+      }
+      // A separate user click opens the wallet without waiting on a network request first.
+      const signed = await signPreparedWalletTransaction(getStellarWallet(), preparedUsdc, wallet);
+      setSetupStage("Adding USDC to your wallet on Stellar Testnet…");
+      const submitted = await fetch("https://horizon-testnet.stellar.org/transactions", {
+        method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ tx: signed.signedTxXdr }), signal: AbortSignal.timeout(20_000),
+      });
+      if (!submitted.ok) throw new Error("The USDC asset could not be added. Refresh your balance before retrying.");
+      setPreparedUsdc(null);
+      setNotice("Test USDC added. You can now receive it from the faucet.");
+      setLoading(true);
+      setRefresh(value => value + 1);
+    } catch (cause) {
+      setError(setupError(cause));
+    } finally {
+      if (reopen && dialog?.isConnected && !dialog.open) dialog.showModal();
+      setSettingUp(false);
+      setSetupStage("");
+      setupInProgress.current = false;
+    }
   }
 
   useEffect(() => {
@@ -71,32 +116,44 @@ export function ProfileBalance({ wallet }: { wallet: string }) {
   }, [wallet, refresh]);
 
   return (
-    <section className="profile-balance" aria-label="Wallet balance" aria-busy={loading}>
+    <section className="profile-balance" aria-label="Wallet balance" aria-busy={loading} ref={balanceRef}>
       <div className="profile-balance-heading">
         <span><Wallet size={17} aria-hidden="true" /> Wallet balance</span>
-        <button className="text-button" type="button" disabled={loading || settingUp} onClick={() => { setLoading(true); setRefresh(value => value + 1); }}>
-          <RotateCw size={14} aria-hidden="true" /> Refresh balance
+        <button className="text-button" type="button" aria-label="Refresh balance" disabled={loading || settingUp} onClick={() => { setLoading(true); setRefresh(value => value + 1); }}>
+          <RotateCw size={14} aria-hidden="true" /> Refresh
         </button>
       </div>
       <small>Stellar Testnet · Test funds</small>
       {loading && <p role="status">Loading your balance…</p>}
       {error && <p className="form-error" role="alert">{error}{result && " The balances below were last loaded successfully."}</p>}
       {notice && <p role="status">{notice}</p>}
+      {setupStage && <p className="wallet-setup-progress" role="status">{setupStage}</p>}
       {result && <>
         <dl className="profile-balance-amounts">
           <div><dt>Test USDC</dt><dd>{amount(result.usdc)}</dd></div>
           <div><dt>Test XLM</dt><dd>{amount(result.xlm)}</dd></div>
         </dl>
-        {!result.accountExists ? <p>Activate this wallet on Stellar Testnet with test XLM first.</p>
-          : !result.hasUsdcTrustline && <p>Add Circle’s test USDC asset in your wallet before receiving it.</p>}
-        <small>Updated {new Date(result.checkedAt).toLocaleTimeString()}</small>
+        <details className="wallet-tools" open={!result.accountExists || !result.hasUsdcTrustline || Boolean(preparedUsdc)}>
+          <summary>Test wallet tools</summary>
+        <div className="wallet-setup-step">
+          {!result.accountExists ? <>
+            <strong>Activate your wallet</strong>
+            <p>Test XLM covers your transaction fees.</p>
+            <button className="button button-primary" type="button" disabled={settingUp || loading} onClick={() => { void setup("fund_xlm"); }}>{settingUp ? "Setting up…" : "Get test XLM"}</button>
+          </> : !result.hasUsdcTrustline ? <>
+            <strong>Enable test USDC</strong>
+            <p>Approve once in your wallet, then receive tokens from Circle’s faucet.</p>
+            <button className="button button-primary" type="button" disabled={settingUp || loading} onClick={() => { void (preparedUsdc ? approveUsdc() : setup("prepare_usdc")); }}>{settingUp ? "Waiting for wallet setup…" : preparedUsdc ? "Open wallet and approve" : "Add test USDC to wallet"}</button>
+          </> : <>
+            <strong>Get test funds</strong>
+            <p>Choose USDC and Stellar Testnet on Circle’s faucet. Paste your wallet address, then refresh here.</p>
+            <a className="button button-primary" href="https://faucet.circle.com/" target="_blank" rel="noreferrer">Get test USDC <ExternalLink size={13} aria-hidden="true" /></a>
+          </>}
+        </div>
+        </details>
       </>}
-      {result && <div className="profile-balance-links">
-        {(!result.accountExists || Number(result.xlm) < 100) && <button className="button button-secondary" type="button" disabled={settingUp || loading} onClick={() => { void setup("fund_xlm"); }}>Get test XLM</button>}
-        {result.accountExists && !result.hasUsdcTrustline && <button className="button button-secondary" type="button" disabled={settingUp || loading} onClick={() => { void setup("prepare_usdc"); }}>Add test USDC to wallet</button>}
-      </div>}
       <div className="profile-balance-links">
-        <a href="https://faucet.circle.com/" target="_blank" rel="noreferrer">Get test USDC <ExternalLink size={13} aria-hidden="true" /></a>
+        {result?.accountExists && Number(result.xlm) < 100 && <button className="text-button" type="button" disabled={settingUp || loading} onClick={() => { void setup("fund_xlm"); }}>Get test XLM</button>}
         <a href={`https://stellar.expert/explorer/testnet/account/${wallet}`} target="_blank" rel="noreferrer">View wallet <ExternalLink size={13} aria-hidden="true" /></a>
       </div>
     </section>

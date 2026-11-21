@@ -46,7 +46,7 @@ The first live technical check created, accepted, and cancelled an unfunded book
 
 ### Two-wallet payment test
 
-1. In separate browser profiles, connect the task owner and provider to Stellar Testnet. Open each CampusCrew profile, get test XLM, and add test USDC to the wallet. The task owner obtains at least 1 test USDC from the Circle faucet.
+1. In separate browser profiles, connect the task owner and provider to Stellar Testnet. Open each CampusCrew profile, get test XLM, choose **Add test USDC to wallet**, then **Open wallet and approve**. The profile dialog pauses while the wallet opens. Adding the trustline does not fund the wallet; the task owner then obtains at least 1 test USDC from Circle's faucet. Use **Reconnect wallet** if the wallet connection was lost.
 2. Post a clearly marked test task and have the provider quote **1 USDC**. Select that provider.
 3. As task owner, choose **Create Testnet escrow** and approve the wallet transaction. Use **Refresh payment** after confirmation.
 4. As provider, refresh and choose **Accept booking terms**. Then the task owner refreshes and chooses **Fund with test USDC**.

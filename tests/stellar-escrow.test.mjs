@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { randomUUID } from "node:crypto";
 import { Account, Address, Keypair, Networks, Operation, TransactionBuilder, scValToNative } from "@stellar/stellar-sdk";
-import { assertBookingTerms, bookingChainId, bookingLedgerKey, escrowCall, permittedOperations, testUsdcContract, usdcUnits, verifySignedTransaction } from "../src/features/book-one/stellar-escrow.ts";
+import { assertBookingTerms, bookingChainId, bookingLedgerKey, buildEscrowTransaction, escrowCall, permittedOperations, testUsdcContract, usdcUnits, verifySignedTransaction } from "../src/features/book-one/stellar-escrow.ts";
 
 const owner = Keypair.random();
 const provider = Keypair.random();
@@ -12,6 +12,16 @@ const terms = {
   token_id: testUsdcContract, resolver: outsider.publicKey(), organizer: owner.publicKey(), provider: provider.publicKey(),
   amount: 10.25, funding_deadline: 2000, work_deadline: 10000,
 };
+
+test("every booking operation builds a Testnet contract transaction without a forbidden memo", () => {
+  for (const operation of ["create", "accept", "fund", "submit", "release", "claim", "cancel", "refund", "dispute"]) {
+    const tx = buildEscrowTransaction(new Account(owner.publicKey(), "1"), terms, operation, owner.publicKey());
+    assert.equal(tx.memo.type, "none");
+    assert.equal(tx.networkPassphrase, Networks.TESTNET);
+    assert.equal(tx.operations.length, 1);
+    assert.equal(tx.operations[0].type, "invokeHostFunction");
+  }
+});
 function booking(state = "Proposed", paid = false) {
   return {
     organizer: terms.organizer, provider: terms.provider,

@@ -2,6 +2,7 @@ export const categories = ["Cleaning", "Hair & beauty", "Tutoring", "Repairs", "
 
 export type Category = (typeof categories)[number];
 export type View = "Browse tasks" | "Posted tasks" | "Sent applications" | "Bookings";
+export type Page = View | "Home" | "Explore campuses";
 export type Status = "Open" | "Awaiting funding" | "Funded" | "Ready for review" | "Paid" | "Refunded" | "Disputed" | "Refund available" | "Cancelled";
 export type Quote = {
   id: string;

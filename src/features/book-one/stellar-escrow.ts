@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { Address, Asset, Contract, Keypair, Networks, StrKey, Transaction, TransactionBuilder, nativeToScVal, xdr } from "@stellar/stellar-sdk";
+import { Account, Address, Asset, BASE_FEE, Contract, Keypair, Networks, StrKey, Transaction, TransactionBuilder, nativeToScVal, xdr } from "@stellar/stellar-sdk";
 import { z } from "zod";
 
 export const escrowOperations = ["create", "accept", "fund", "submit", "release", "claim", "cancel", "refund", "dispute"] as const;
@@ -12,6 +12,12 @@ export type EscrowTerms = {
   request_id: string; chain_id: string; contract_id: string; token_id: string; resolver: string;
   organizer: string; provider: string; amount: number; funding_deadline: number; work_deadline: number;
 };
+
+export function buildEscrowTransaction(account: Account, terms: EscrowTerms, operation: EscrowOperation, actor: string) {
+  // Soroban transactions require MEMO_NONE. Intent IDs belong in the database.
+  return new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: Networks.TESTNET })
+    .addOperation(escrowCall(terms, operation, actor)).setTimeout(180).build();
+}
 const wallet = z.string().refine(value => StrKey.isValidEd25519PublicKey(value));
 const units = z.bigint().nonnegative();
 export const chainBookingSchema = z.object({

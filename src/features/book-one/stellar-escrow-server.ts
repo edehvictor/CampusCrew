@@ -1,11 +1,11 @@
 import "server-only";
-import { createHash, randomUUID } from "node:crypto";
-import { BASE_FEE, Contract, Memo, Networks, StrKey, TransactionBuilder, rpc, scValToNative } from "@stellar/stellar-sdk";
+import { randomUUID } from "node:crypto";
+import { Contract, Networks, StrKey, rpc, scValToNative } from "@stellar/stellar-sdk";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { PilotError } from "./pilot-error";
 import { checkStellarDatabase } from "./stellar-session";
 import {
-  assertBookingTerms, bookingChainId, bookingLedgerKey, escrowCall, permittedOperations,
+  assertBookingTerms, bookingChainId, bookingLedgerKey, buildEscrowTransaction, permittedOperations,
   stellarTestnetRpc, testUsdcContract, verifySignedTransaction,
   type ChainBooking, type EscrowOperation, type EscrowTerms,
 } from "./stellar-escrow";
@@ -152,9 +152,7 @@ export async function prepareEscrow(wallet: string, requestId: string, operation
   try { account = await client.getAccount(wallet); }
   catch { throw new PilotError("Activate this wallet on Stellar Testnet with test XLM before signing a booking transaction.", 409); }
   const intentId = randomUUID();
-  const transaction = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: Networks.TESTNET })
-    .addMemo(Memo.hash(createHash("sha256").update(intentId).digest()))
-    .addOperation(escrowCall(terms, operation, wallet)).setTimeout(180).build();
+  const transaction = buildEscrowTransaction(account, terms, operation, wallet);
   const simulation = await client.simulateTransaction(transaction);
   if (rpc.Api.isSimulationRestore(simulation)) throw new PilotError("This booking's chain data needs restoration before it can be used. Contact CampusCrew support.", 409);
   if (!rpc.Api.isSimulationSuccess(simulation)) throw new PilotError("Stellar could not prepare this action. Check your test XLM, test USDC and trustline, then refresh payment.", 409);
@@ -167,11 +165,14 @@ export async function prepareEscrow(wallet: string, requestId: string, operation
     expires_at: expires, completion_note: operation === "submit" ? note!.trim() : null,
   }, { onConflict: "tx_hash", ignoreDuplicates: true });
   database(inserted.error);
-  const saved = await db.from("campuscrew_stellar_payment_intents").select("id,wallet,request_id,operation")
+  const saved = await db.from("campuscrew_stellar_payment_intents").select("id,wallet,request_id,operation,completion_note")
     .eq("tx_hash", txHash).single();
   database(saved.error);
   if (!saved.data || saved.data.wallet !== wallet || saved.data.request_id !== requestId || saved.data.operation !== operation) {
     throw new PilotError("The prepared transaction did not match this booking.", 409);
+  }
+  if (operation === "submit" && saved.data.completion_note !== note!.trim()) {
+    throw new PilotError("A different completion note was just prepared. Try again shortly.", 409);
   }
   return { intentId: saved.data.id, xdr: prepared.toXDR(), wallet, networkPassphrase: Networks.TESTNET, fee: prepared.fee, expiresAt: expires };
 }

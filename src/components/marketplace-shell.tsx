@@ -1,10 +1,10 @@
-import { BriefcaseBusiness, ChevronRight, ClipboardList, Compass, LogOut, Menu, Plus, Send, X } from "lucide-react";
+import { BriefcaseBusiness, ChevronRight, ClipboardList, Compass, GraduationCap, House, LogOut, Menu, Plus, Send, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import type { View } from "@/features/book-one/model";
+import type { Page } from "@/features/book-one/model";
 import "./marketplace-shell.css";
 
 const navigation = [
-  { label: "Marketplace", items: [{ view: "Browse tasks", icon: Compass }] },
+  { label: "Marketplace", items: [{ view: "Home", icon: House }, { view: "Explore campuses", icon: GraduationCap }, { view: "Browse tasks", icon: Compass }] },
   {
     label: "My activity",
     items: [
@@ -16,8 +16,8 @@ const navigation = [
 ] as const;
 
 type Props = {
-  view: View;
-  onNavigate: (view: View) => void;
+  view: Page;
+  onNavigate: (view: Page) => void;
   onPost: () => void;
   accountControl?: ReactNode;
   logout?: { run: () => void; pending: boolean };
@@ -27,7 +27,7 @@ type Props = {
 export function MarketplaceShell({ view, onNavigate, onPost, accountControl, logout, children }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
 
-  function navigate(next: View) {
+  function navigate(next: Page) {
     onNavigate(next);
     setMenuOpen(false);
   }
@@ -36,7 +36,7 @@ export function MarketplaceShell({ view, onNavigate, onPost, accountControl, log
     <div className="marketplace-shell" data-menu={menuOpen ? "open" : "closed"}>
       <a className="skip-link" href="#marketplace-main">Skip to content</a>
       <aside className="workspace-sidebar" id="workspace-sidebar">
-        <button className="brand" type="button" onClick={() => navigate("Browse tasks")}>
+        <button className="brand" type="button" onClick={() => navigate("Home")}>
           <span className="brand-mark" aria-hidden="true" />
           Campuscrew
         </button>
@@ -89,7 +89,7 @@ export function MarketplaceShell({ view, onNavigate, onPost, accountControl, log
             </button>
             <span className="mobile-brand"><span className="brand-mark" aria-hidden="true" /> Campuscrew</span>
             <span className="workspace-crumb">
-              {view === "Browse tasks" ? "Marketplace" : "My activity"} <ChevronRight size={13} aria-hidden="true" /> <strong>{view}</strong>
+              {["Home", "Explore campuses", "Browse tasks"].includes(view) ? "Marketplace" : "My activity"} <ChevronRight size={13} aria-hidden="true" /> <strong>{view}</strong>
             </span>
           </div>
           <div className="workspace-actions">

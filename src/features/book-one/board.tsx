@@ -3,12 +3,13 @@
 import { CheckCircle2, ClipboardList } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { MarketplaceShell } from "@/components/marketplace-shell";
-import { categories, isInView, type Job, type Quote, type View } from "./model";
+import { categories, isInView, type Job, type Quote, type View, type Page } from "./model";
 import { pilotAreas, type EntryIntent, type PaymentOperation, type PilotMutation } from "./pilot-types";
 import { RequestDetail } from "./request-detail";
 import { RequestDialog, type DialogKind } from "./request-dialog";
 import { emptyFilters, RequestList } from "./request-list";
 import { CampusSelector } from "./campus-selector";
+import { Home, ExploreCampuses } from "./discovery-pages";
 import "./book-one.css";
 import "./pilot.css";
 
@@ -34,7 +35,8 @@ export type LiveBoardActions = {
 
 export function BookOneBoard({ live }: { live: LiveBoardActions }) {
   const { jobs } = live;
-  const [view, setView] = useState<View>("Browse tasks");
+  const [page, setPage] = useState<Page>("Home");
+  const view: View = page === "Home" || page === "Explore campuses" ? "Browse tasks" : page;
   const [selectedId, setSelectedId] = useState<string>();
   const [filters, setFilters] = useState(emptyFilters);
   const [dialog, setDialog] = useState<DialogKind | null>(null);
@@ -53,7 +55,7 @@ export function BookOneBoard({ live }: { live: LiveBoardActions }) {
       if (intent.kind === "quote") {
         setFilters(emptyFilters);
         setSelectedId(intent.requestId);
-        setView("Browse tasks");
+        setPage("Browse tasks");
         setMobileDetails(true);
       }
       if (intent.kind === "post" || live.jobs.some(job => job.id === intent.requestId && job.status === "Open")) {
@@ -76,8 +78,8 @@ export function BookOneBoard({ live }: { live: LiveBoardActions }) {
   );
   const selected = matches.find(job => job.id === selectedId) ?? matches[0];
 
-  function navigate(next: View, jobId?: string) {
-    setView(next);
+  function navigate(next: Page, jobId?: string) {
+    setPage(next);
     setFilters(emptyFilters);
     setMobileDetails(Boolean(jobId));
     setNotice("");
@@ -179,13 +181,15 @@ export function BookOneBoard({ live }: { live: LiveBoardActions }) {
 
   return (
     <MarketplaceShell
-      view={view}
+      view={page}
       onNavigate={navigate}
       onPost={() => openDialog("post")}
       accountControl={live.accountControl}
       logout={live.logout}
     >
-      <div className="book-one">
+      {page === "Home" ? <Home jobs={jobs} onPost={() => openDialog("post")} onBrowse={category => { navigate("Browse tasks"); if (category) setFilters({ ...emptyFilters, category }); }} onTask={job => navigate("Browse tasks", job.id)} />
+        : page === "Explore campuses" ? <ExploreCampuses onOpen={() => navigate("Browse tasks")} />
+        : <div className="book-one">
         <header className="board-intro">
           <div>
             <p className="pilot-campus">UNN · Nsukka</p>
@@ -221,7 +225,8 @@ export function BookOneBoard({ live }: { live: LiveBoardActions }) {
             </div>
           )}
         </div>
-      </div>
+      </div>}
+      {(page === "Home" || page === "Explore campuses") && error && <div className="discovery-connection"><p className="form-error" role="alert">{error}</p></div>}
       {dialog && <RequestDialog key={dialog} kind={dialog} areas={pilotAreas} busy={busy} error={error} onDismiss={dismissDialog} onSubmit={submit} />}
     </MarketplaceShell>
   );
