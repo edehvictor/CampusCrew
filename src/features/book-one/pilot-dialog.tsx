@@ -2,6 +2,7 @@ import { Wallet, X } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { categories, type Job } from "./model";
 import { pilotAreas, profileSchema, type PilotProfile } from "./pilot-types";
+import { ProfileBalance } from "./profile-balance";
 
 export type PilotPanel = "wallet" | "profile" | "account";
 const titles = {
@@ -116,6 +117,7 @@ export function PilotDialog(props: Props) {
           <p><strong>{profile?.displayName}</strong> · {profile?.area}</p>
           <p>Signed in with a Stellar wallet · Testnet</p>
           <p className="pilot-wallet">{accountWallet}</p>
+          {accountWallet && <ProfileBalance key={accountWallet} wallet={accountWallet} />}
           <button className="button button-secondary" type="button" disabled={busy} onClick={props.onEdit}>Edit profile</button>
           <button className="button button-secondary" type="button" disabled={busy} onClick={props.onSignOut}>Sign out</button>
         </div>

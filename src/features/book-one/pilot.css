@@ -91,6 +91,41 @@
   accent-color: var(--primary);
 }
 
+.campus-control { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 16px; }
+.campus-selector { position: relative; max-width: 100%; }
+.campus-selector summary {
+  display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 8px 12px;
+  border: 1px solid var(--line); border-radius: 9px; background: var(--surface);
+  color: var(--primary-ink); cursor: pointer; list-style: none; font-size: 13px; font-weight: 650;
+}
+.campus-selector summary::-webkit-details-marker { display: none; }
+.campus-options {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 5;
+  display: grid; gap: 4px; width: min(310px, calc(100vw - 48px)); padding: 8px;
+  border: 1px solid var(--line); border-radius: 11px; background: var(--surface); box-shadow: var(--shadow);
+}
+.campus-options p { padding: 4px 8px; color: var(--muted); font-size: 11px; }
+.campus-options button {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 8px; border: 0; border-radius: 7px; background: transparent; text-align: left; font-size: 12px;
+}
+.campus-options button:hover { background: var(--primary-wash); }
+.campus-options button small { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; }
+.campus-options button svg { color: var(--primary-ink); flex-shrink: 0; }
+.campus-notice { color: var(--muted); font-size: 12px; }
+.campus-notice:empty { display: none; }
+
+.profile-balance { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--primary-wash); }
+.profile-balance-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.profile-balance-heading > span { display: flex; align-items: center; gap: 7px; font-weight: 700; font-size: 13px; }
+.profile-balance-heading button { font-size: 12px; }
+.profile-balance small { color: var(--muted); font-size: 11px; }
+.profile-balance-amounts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 0; }
+.profile-balance-amounts dt { color: var(--muted); font-size: 12px; }
+.profile-balance-amounts dd { margin: 4px 0 0; overflow-wrap: anywhere; font-size: 22px; font-weight: 750; font-variant-numeric: tabular-nums; }
+.profile-balance-links { display: flex; flex-wrap: wrap; gap: 10px 16px; font-size: 12px; }
+.profile-balance-links a { display: inline-flex; align-items: center; gap: 4px; color: var(--primary-ink); }
+
 .booking-receipts { display: flex; flex-wrap: wrap; gap: 7px 12px; margin-top: 10px; font-size: 12px; }
 .booking-receipts:empty { display: none; }
 .booking-receipts a { color: var(--primary-ink); }

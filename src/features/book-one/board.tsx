@@ -8,6 +8,7 @@ import { pilotAreas, type EntryIntent, type PaymentOperation, type PilotMutation
 import { RequestDetail } from "./request-detail";
 import { RequestDialog, type DialogKind } from "./request-dialog";
 import { emptyFilters, RequestList } from "./request-list";
+import { CampusSelector } from "./campus-selector";
 import "./book-one.css";
 import "./pilot.css";
 
@@ -194,6 +195,7 @@ export function BookOneBoard({ live }: { live: LiveBoardActions }) {
           </div>
         </header>
         {live.banner}
+        <CampusSelector />
         <div className="board-notice" role="status">
           {notice && <><CheckCircle2 size={17} aria-hidden="true" /> {notice}</>}
         </div>

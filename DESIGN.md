@@ -10,6 +10,8 @@ Drips Wave uses a persistent navigation column, groups actions by role, and keep
 - My activity groups Posted tasks, Sent applications, and Bookings.
 - Use View applications on a posted task to compare providers and select one.
 - Primary actions are contextual. The top bar has Post a task, and a task's details show the action available in its current state.
+- Put the campus selector above the task board. UNN, Nsukka is active; other campuses display Coming soon and do not change the selected campus.
+- Keep wallet balances and the test-funds faucet inside the profile account modal, with refresh, loading, and failure states. Keep network and price-unit labels visible in the marketplace.
 
 ## Visual system
 

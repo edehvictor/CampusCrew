@@ -23,7 +23,7 @@ Implement a single Soroban escrow supporting one contributor or several contribu
 
 Current implementation: `contracts/escrow/src/lib.rs`, with tests in `contracts/escrow/src/test.rs`.
 
-Local execution is currently blocked by Windows Application Control. The contract implementation has not yet passed its 13 tests or a WebAssembly build. The prepared Linux CI workflow also needs to run before this checkpoint can be marked complete.
+November 21: Rust formatting passes after applying `cargo fmt`. Windows Application Control still blocks dependency build scripts (error 4551), so contract tests and the WebAssembly build are blocked locally. The first Linux workflow for commit `90340a9` failed before CampusCrew tests compiled: https://github.com/edehvictor/CampusCrew/actions/runs/44529613306. The owner supplied the error: `soroban-env-host` resolved `ed25519-dalek` 3.0.0, incompatible with its `rand_chacha` 0.3.1 random-number traits. `Cargo.lock` now resolves `ed25519-dalek` 2.2.0 and `rand_core` 0.6.4 consistently; the dependency tree and locked manifest resolution pass. A successful Linux rerun is still required. The workflow now also checks formatting before testing. The contract has not passed verification and must not be deployed as verified.
 
 Acceptance: formatting, contract tests, Clippy, and a release WebAssembly build pass. Test signature requirements, replay attempts, incomplete groups, rounding, expiry, cancellation, and failure rollback.
 
@@ -31,13 +31,11 @@ Acceptance: formatting, contract tests, Clippy, and a release WebAssembly build 
 
 Implemented in the existing checkout: Stellar Wallets Kit with Freighter / Varial and xBull, server-verified SEP-53 login, browser-bound single-use challenges, HTTP-only revocable sessions, profile completion, and Stellar task/application/provider-selection APIs. The active frontend uses Testnet/USDC labels. The GoodDollar verification and Celo wallet flow have been removed from the runtime.
 
-The migration `supabase/migrations/20261119000100_stellar_onboarding.sql` has been applied to the development Supabase project. Signed login, session reads, challenge replay rejection, logout, and session revocation passed against the local API on November 19, 2026. The browser wallet approval flow still needs a user test. Payment and completion actions currently return an explicit integration-pending error. Database tests also run the migration in in-memory PostgreSQL, including authorization and retry checks.
+The migration `supabase/migrations/20261119000100_stellar_onboarding.sql` has been applied to the development Supabase project. Signed login, session reads, challenge replay rejection, logout, and session revocation passed against the local API. On November 21 the user confirmed the two-browser test: sign in, save profiles, post a task, apply, select a provider, refresh, and sign out. Payment and completion actions currently return an explicit integration-pending error. Database tests also run the migration in in-memory PostgreSQL, including authorization and retry checks.
 
-Replace the existing frontend's Reown/wagmi Ethereum wallet flow with Stellar wallet selection and signing. Keep the existing profile fields and grouped navigation. Use Supabase for profiles and task data.
+The marketplace now has a campus selector with UNN active and other campuses coming soon. It does not enable another campus or combine campus data. The profile account modal fetches actual Testnet XLM and Circle-issued test USDC balances from an authenticated server endpoint. No balance is shown in the main page header. Unactivated accounts, missing USDC trustlines, and network errors have separate states. App tests now include balance issuer matching and lookup failures.
 
-Implement server-issued, origin-bound, expiring login challenges. Verify Ed25519 signatures on the server, consume challenges once, and issue secure sessions. Check the wallet and Testnet network again before payment signing.
-
-Add a Stellar-specific database migration for wallet addresses and booking records. Keep network, asset identity, contract address, participant shares, and transaction hashes on each booking. Replace GoodDollar identity requirements with profile completion and wallet ownership checks. Decide any additional campus identity checks with the pilot users.
+For payment integration, check the wallet and Testnet network again before signing. Keep network, asset identity, contract address, participant shares, and transaction hashes on each booking. Decide any additional campus identity checks with pilot users.
 
 Acceptance: two browser sessions sign in as different Stellar wallets, complete profiles, post a task, apply, and select a provider. Refresh preserves each account's session. Failed and replayed login challenges are rejected. The existing app's Celo authentication has been removed from the Stellar runtime.
 

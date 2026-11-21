@@ -184,7 +184,6 @@ export function PilotBoard() {
     <div className="pilot-bar">
       <div className="pilot-funds">
         <strong>Stellar Testnet</strong><small>Prices in test USDC</small>
-        {account && <a className="button button-secondary" href="https://faucet.circle.com/" target="_blank" rel="noreferrer">Get test USDC</a>}
       </div>
       <button type="button" className="text-button" disabled={busy} onClick={() => { void handle(async () => { await load(); setBanner(""); }, true); }}>
         <RotateCw size={15} aria-hidden="true" /> Refresh tasks

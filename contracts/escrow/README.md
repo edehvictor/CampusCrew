@@ -4,7 +4,7 @@ CampusCrew helps students and neighbours find local service providers. People po
 
 The first service area is the University of Nigeria, Nsukka. Categories include cleaning, tutoring, hair and beauty, repairs, tech and design, and errands.
 
-The Stellar migration lives in the existing CampusCrew project. Run the Rust commands below from the project root. The frontend uses Stellar wallet sign-in and Testnet task data. Connecting this escrow to the frontend is the next payment milestone. Rust compilation, formatting, and the 13 contract tests are unverified because Windows Application Control blocked execution.
+The Stellar migration lives in the existing CampusCrew project. Run the Rust commands below from the project root. The frontend uses Stellar wallet sign-in and Testnet task data. Connecting this escrow to the frontend is the next payment milestone. Rust formatting passes; compilation and the 13 contract tests still need a successful Linux CI run because Windows Application Control blocks dependency build scripts locally.
 
 ## Contract behaviour
 
@@ -34,6 +34,16 @@ cargo build --locked --target wasm32v1-none --release
 ```
 
 The release artifact is `target/wasm32v1-none/release/campuscrew_escrow.wasm`. Local contract tests exercise the Soroban host with a test token. They do not create Stellar Testnet transactions.
+
+### Signing dependency compatibility
+
+`soroban-sdk` 26.1.0 pins `soroban-env-host` 26.1.3, which allows `ed25519-dalek >=2.0.0`. An unrestricted resolution selected version 3, whose random-number traits conflict with the host's `rand_chacha` 0.3.1. This caused the first Linux CI failure before CampusCrew tests could compile. `Cargo.lock` now resolves `ed25519-dalek` 2.2.0 and `rand_core` 0.6.4 for both the SDK and host. Keep the committed lockfile and use `--locked` in checks. Do not regenerate it without checking this compatibility; the upstream fix is documented in [Soroban environment 26.1.4](https://github.com/stellar/rs-soroban-env/releases/tag/v26.1.4).
+
+To inspect the selected dependency without compiling:
+
+```bash
+cargo tree --locked -i ed25519-dalek@2.2.0
+```
 
 ## Testnet rollout
 

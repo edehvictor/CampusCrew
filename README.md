@@ -29,7 +29,11 @@ Stellar sign-in uses its own session cookie. Earlier Ethereum/Supabase browser s
 
 Users can sign in, save profiles, post tasks with test USDC budgets, apply, compare applications, and select a provider. The selected booking waits for funding.
 
-The Soroban escrow draft is in `contracts/escrow`. Its connection to the browser and server is pending. The server rejects payment and completion requests until that integration is implemented. Windows Application Control blocked the original contract checks, so the contract's 13 Rust tests and WebAssembly build are still unverified. The prepared `.github/workflows/contracts.yml` can run checks on Linux after publication.
+The campus selector keeps UNN, Nsukka active. Choosing **Other campuses** displays a coming-soon notice and keeps the UNN task list selected. Multi-campus data and onboarding are not enabled yet.
+
+Open your profile to see your wallet's test USDC and XLM balances, refresh them, or open the test USDC faucet. Balances are read from Stellar Testnet for the signed-in wallet. Only USDC issued by Circle's Testnet issuer is counted. A failed lookup displays an error; an unactivated account and an account without a USDC trustline are identified separately. Balances and the faucet link stay in the profile modal.
+
+The Soroban escrow draft is in `contracts/escrow`. Its connection to the browser and server is pending. The server rejects payment and completion requests until that integration is implemented. Rust formatting now passes. Windows Application Control still blocks dependency build scripts, so local contract tests and the WebAssembly build remain blocked. The first Linux run failed inside Soroban's signing dependency before CampusCrew tests could compile. The lockfile now selects the compatible `ed25519-dalek` 2.2.0 dependency; a new Linux run must pass before deployment. See the escrow README for the dependency fix and the latest contract run in GitHub Actions.
 
 ## Test
 

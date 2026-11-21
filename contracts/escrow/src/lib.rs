@@ -104,13 +104,24 @@ pub struct CampusCrewEscrow;
 fn save(env: &Env, id: &BytesN<32>, booking: &Booking) {
     let key = Key::Booking(id.clone());
     env.storage().persistent().set(&key, booking);
-    env.storage().persistent().extend_ttl(&key, TTL_THRESHOLD, TTL_EXTEND);
-    env.storage().instance().extend_ttl(TTL_THRESHOLD, TTL_EXTEND);
-    Changed { booking: id.clone(), state: booking.state.clone(), funded: booking.funded }.publish(env);
+    env.storage()
+        .persistent()
+        .extend_ttl(&key, TTL_THRESHOLD, TTL_EXTEND);
+    env.storage()
+        .instance()
+        .extend_ttl(TTL_THRESHOLD, TTL_EXTEND);
+    Changed {
+        booking: id.clone(),
+        state: booking.state.clone(),
+        funded: booking.funded,
+    }
+    .publish(env);
 }
 
 fn load(env: &Env, id: &BytesN<32>) -> Booking {
-    env.storage().persistent().get(&Key::Booking(id.clone()))
+    env.storage()
+        .persistent()
+        .get(&Key::Booking(id.clone()))
         .unwrap_or_else(|| panic_with_error!(env, Error::Missing))
 }
 
@@ -122,14 +133,26 @@ fn transfer(env: &Env, from: &Address, to: &Address, amount: i128) {
 }
 
 fn is_participant(booking: &Booking, wallet: &Address) -> bool {
-    booking.participants.iter().any(|share| share.wallet == *wallet)
+    booking
+        .participants
+        .iter()
+        .any(|share| share.wallet == *wallet)
 }
 
 fn payout(env: &Env, id: &BytesN<32>, mut booking: Booking, provider_amount: i128) {
     booking.refund_pool = booking.funded - provider_amount;
-    booking.state = if booking.refund_pool > 0 { State::Refundable } else { State::Paid };
+    booking.state = if booking.refund_pool > 0 {
+        State::Refundable
+    } else {
+        State::Paid
+    };
     save(env, id, &booking);
-    transfer(env, &env.current_contract_address(), &booking.provider, provider_amount);
+    transfer(
+        env,
+        &env.current_contract_address(),
+        &booking.provider,
+        provider_amount,
+    );
 }
 
 #[contractimpl]
@@ -162,18 +185,28 @@ impl CampusCrewEscrow {
         }
         let now = env.ledger().timestamp();
         let resolver = Self::resolver(env.clone());
-        if organizer == provider || resolver == provider || resolver == organizer
-            || contributions.is_empty() || contributions.len() > MAX_PARTICIPANTS
-            || funding_deadline <= now || funding_deadline > now + 7 * DAY
-            || work_deadline <= funding_deadline || work_deadline > now + 30 * DAY
+        if organizer == provider
+            || resolver == provider
+            || resolver == organizer
+            || contributions.is_empty()
+            || contributions.len() > MAX_PARTICIPANTS
+            || funding_deadline <= now
+            || funding_deadline > now + 7 * DAY
+            || work_deadline <= funding_deadline
+            || work_deadline > now + 30 * DAY
         {
             panic_with_error!(&env, Error::InvalidTerms);
         }
         let mut participants = Vec::new(&env);
         let mut total = 0_i128;
         for (wallet, amount) in contributions.iter() {
-            if wallet == provider || wallet == resolver || amount <= 0 || amount > MAX_AMOUNT
-                || participants.iter().any(|share: Share| share.wallet == wallet)
+            if wallet == provider
+                || wallet == resolver
+                || amount <= 0
+                || amount > MAX_AMOUNT
+                || participants
+                    .iter()
+                    .any(|share: Share| share.wallet == wallet)
             {
                 panic_with_error!(&env, Error::InvalidTerms);
             }
@@ -181,11 +214,23 @@ impl CampusCrewEscrow {
             if total > MAX_AMOUNT {
                 panic_with_error!(&env, Error::InvalidTerms);
             }
-            participants.push_back(Share { wallet, amount, paid: false, refunded: false });
+            participants.push_back(Share {
+                wallet,
+                amount,
+                paid: false,
+                refunded: false,
+            });
         }
         let booking = Booking {
-            organizer: organizer.clone(), provider, participants, total, funded: 0,
-            funding_deadline, work_deadline, review_deadline: 0, refund_pool: 0,
+            organizer: organizer.clone(),
+            provider,
+            participants,
+            total,
+            funded: 0,
+            funding_deadline,
+            work_deadline,
+            review_deadline: 0,
+            refund_pool: 0,
             state: State::Proposed,
         };
         if !is_participant(&booking, &organizer) {
@@ -216,8 +261,12 @@ impl CampusCrewEscrow {
         if env.ledger().timestamp() >= booking.funding_deadline {
             panic_with_error!(&env, Error::DeadlinePassed);
         }
-        let index = booking.participants.iter().position(|share| share.wallet == wallet)
-            .unwrap_or_else(|| panic_with_error!(&env, Error::Unauthorized)) as u32;
+        let index = booking
+            .participants
+            .iter()
+            .position(|share| share.wallet == wallet)
+            .unwrap_or_else(|| panic_with_error!(&env, Error::Unauthorized))
+            as u32;
         let mut share = booking.participants.get(index).unwrap();
         if share.paid {
             panic_with_error!(&env, Error::AlreadyContributed);
@@ -230,7 +279,12 @@ impl CampusCrewEscrow {
         }
         save(&env, &id, &booking);
         transfer(&env, &wallet, &env.current_contract_address(), share.amount);
-        Contribution { booking: id, wallet, amount: share.amount }.publish(&env);
+        Contribution {
+            booking: id,
+            wallet,
+            amount: share.amount,
+        }
+        .publish(&env);
     }
 
     pub fn submit(env: Env, id: BytesN<32>) {
@@ -326,8 +380,12 @@ impl CampusCrewEscrow {
         for index in 0..booking.participants.len() {
             let mut share = booking.participants.get(index).unwrap();
             let before = cumulative;
-            if share.paid { cumulative += share.amount; }
-            if share.wallet != wallet { continue; }
+            if share.paid {
+                cumulative += share.amount;
+            }
+            if share.wallet != wallet {
+                continue;
+            }
             if !share.paid || share.refunded {
                 panic_with_error!(&env, Error::NothingToRefund);
             }
@@ -338,7 +396,12 @@ impl CampusCrewEscrow {
             booking.participants.set(index, share);
             save(&env, &id, &booking);
             transfer(&env, &env.current_contract_address(), &wallet, amount);
-            Refunded { booking: id, wallet, amount }.publish(&env);
+            Refunded {
+                booking: id,
+                wallet,
+                amount,
+            }
+            .publish(&env);
             return amount;
         }
         panic_with_error!(&env, Error::Unauthorized);
@@ -347,8 +410,12 @@ impl CampusCrewEscrow {
     pub fn get_booking(env: Env, id: BytesN<32>) -> Booking {
         let booking = load(&env, &id);
         let key = Key::Booking(id);
-        env.storage().persistent().extend_ttl(&key, TTL_THRESHOLD, TTL_EXTEND);
-        env.storage().instance().extend_ttl(TTL_THRESHOLD, TTL_EXTEND);
+        env.storage()
+            .persistent()
+            .extend_ttl(&key, TTL_THRESHOLD, TTL_EXTEND);
+        env.storage()
+            .instance()
+            .extend_ttl(TTL_THRESHOLD, TTL_EXTEND);
         booking
     }
 }
