@@ -158,6 +158,7 @@
   background-image: url('/noise.png');
   background-repeat: repeat;
   background-size: 220px 220px;
+  filter: invert(1);
   mix-blend-mode: multiply;
   opacity: .6;
 }
