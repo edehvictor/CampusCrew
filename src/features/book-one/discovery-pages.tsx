@@ -18,7 +18,7 @@ function CampusLogo() {
 export function Home({ jobs, onPost, onBrowse, onTask }: HomeProps) {
   const available = jobs.filter(job => job.status === "Open");
   return (
-    <div className="discovery-page">
+    <div className="discovery-page home-page">
       <section className="home-hero" aria-labelledby="home-title">
         <div className="home-hero-copy">
           <p className="home-kicker">UNIVERSITY OF NIGERIA, NSUKKA</p>

@@ -164,3 +164,19 @@
 }
 
 .home-hero > * { position: relative; z-index: 1; }
+
+/* Let the hero background reach both edges while the content keeps its gutter. */
+.home-page {
+  --discovery-gutter: clamp(20px, 3vw, 44px);
+  max-width: none;
+  padding-inline: 0;
+}
+.home-page > .home-hero {
+  width: 100%;
+  padding-inline: max(var(--discovery-gutter), calc((100% - 1440px) / 2 + var(--discovery-gutter)));
+}
+.home-page > section:not(.home-hero) {
+  align-self: center;
+  width: calc(100% - 2 * var(--discovery-gutter));
+  max-width: calc(1440px - 2 * var(--discovery-gutter));
+}
