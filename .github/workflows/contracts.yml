@@ -21,8 +21,15 @@ jobs:
       - name: Check Rust formatting
         run: cargo fmt --check
       - name: Test authorization and booking settlement
-        run: cargo test --locked
+        run: python3 .github/scripts/run-contract-tests.py
       - name: Check Rust diagnostics
         run: cargo clippy --locked --all-targets -- -D warnings
       - name: Build the deployable contract
         run: cargo build --locked --target wasm32v1-none --release
+      - name: Save verified contract for Testnet deployment
+        uses: actions/upload-artifact@v4
+        with:
+          name: campuscrew-escrow-wasm
+          path: target/wasm32v1-none/release/campuscrew_escrow.wasm
+          if-no-files-found: error
+          retention-days: 7

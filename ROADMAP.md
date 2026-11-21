@@ -27,6 +27,8 @@ November 21: Rust formatting passes after applying `cargo fmt`. Windows Applicat
 
 Acceptance: formatting, contract tests, Clippy, and a release WebAssembly build pass. Test signature requirements, replay attempts, incomplete groups, rounding, expiry, cancellation, and failure rollback.
 
+The next run (`6d0af71`, https://github.com/edehvictor/CampusCrew/actions/runs/44842470324) passed formatting and reached CampusCrew test compilation. Its 31 E0308 failures came from comparing the local error enum directly against the generated client's `soroban_sdk::Error`. Assertions now use `.into()` to retain exact error-code checks. An additional test checks the configured token/resolver and rejects overlapping resolver roles (14 tests total). The test runner now exposes compiler diagnostics in public GitHub annotations. These changes still need a successful Linux run; no escrow deployment or live payout is confirmed.
+
 ## 2. Stellar authentication and profiles
 
 Implemented in the existing checkout: Stellar Wallets Kit with Freighter / Varial and xBull, server-verified SEP-53 login, browser-bound single-use challenges, HTTP-only revocable sessions, profile completion, and Stellar task/application/provider-selection APIs. The active frontend uses Testnet/USDC labels. The GoodDollar verification and Celo wallet flow have been removed from the runtime.

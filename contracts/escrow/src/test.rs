@@ -83,6 +83,31 @@ impl Fixture {
 }
 
 #[test]
+fn preserves_token_and_resolver_and_rejects_conflicting_roles() {
+    let f = Fixture::new();
+    assert_eq!(f.client().token(), f.token);
+    assert_eq!(f.client().resolver(), f.resolver);
+    let resolver_plan = vec![&f.env, (f.resolver.clone(), 100)];
+    assert_eq!(
+        f.client().try_create(
+            &f.id,
+            &f.resolver,
+            &f.provider,
+            &resolver_plan,
+            &2_000,
+            &10_000,
+        ),
+        Err(Ok(Error::InvalidTerms.into()))
+    );
+    let plan = vec![&f.env, (f.organizer.clone(), 100)];
+    assert_eq!(
+        f.client()
+            .try_create(&f.id, &f.organizer, &f.resolver, &plan, &2_000, &10_000,),
+        Err(Ok(Error::InvalidTerms.into()))
+    );
+}
+
+#[test]
 fn individual_booking_pays_once_after_provider_submission() {
     let f = Fixture::new();
     f.individual();
@@ -91,16 +116,22 @@ fn individual_booking_pays_once_after_provider_submission() {
     f.client().contribute(&f.id, &f.organizer);
     assert_eq!(f.balance(&f.contract), 100);
     assert_eq!(f.balance(&f.organizer), 0);
-    assert_eq!(f.client().try_release(&f.id), Err(Ok(Error::InvalidState)));
+    assert_eq!(
+        f.client().try_release(&f.id),
+        Err(Ok(Error::InvalidState.into()))
+    );
     f.client().submit(&f.id);
     f.client().release(&f.id);
     assert_eq!(f.balance(&f.provider), 100);
     assert_eq!(f.balance(&f.contract), 0);
     assert_eq!(f.client().get_booking(&f.id).state, State::Paid);
-    assert_eq!(f.client().try_release(&f.id), Err(Ok(Error::InvalidState)));
+    assert_eq!(
+        f.client().try_release(&f.id),
+        Err(Ok(Error::InvalidState.into()))
+    );
     assert_eq!(
         f.client().try_claim_payout(&f.id),
-        Err(Ok(Error::InvalidState))
+        Err(Ok(Error::InvalidState.into()))
     );
 }
 
@@ -112,7 +143,10 @@ fn four_contributors_fund_one_booking_and_one_provider_payout() {
     for index in 0..3 {
         f.client().contribute(&f.id, &plan.get(index).unwrap().0);
         assert_eq!(f.client().get_booking(&f.id).state, State::Funding);
-        assert_eq!(f.client().try_submit(&f.id), Err(Ok(Error::InvalidState)));
+        assert_eq!(
+            f.client().try_submit(&f.id),
+            Err(Ok(Error::InvalidState.into()))
+        );
     }
     f.client().contribute(&f.id, &plan.get(3).unwrap().0);
     assert_eq!(f.client().get_booking(&f.id).state, State::Funded);
@@ -136,17 +170,17 @@ fn incomplete_group_refunds_each_actual_contributor_at_expiry() {
     f.client().contribute(&f.id, &third);
     assert_eq!(
         f.client().try_refund(&f.id, &third),
-        Err(Ok(Error::TooEarly))
+        Err(Ok(Error::TooEarly.into()))
     );
     f.env.ledger().set_timestamp(2_000);
     assert_eq!(
         f.client().try_contribute(&f.id, &second),
-        Err(Ok(Error::DeadlinePassed))
+        Err(Ok(Error::DeadlinePassed.into()))
     );
     assert_eq!(f.client().refund(&f.id, &third), 20);
     assert_eq!(
         f.client().try_refund(&f.id, &second),
-        Err(Ok(Error::NothingToRefund))
+        Err(Ok(Error::NothingToRefund.into()))
     );
     assert_eq!(f.client().refund(&f.id, &f.organizer), 40);
     assert_eq!(f.balance(&f.contract), 0);
@@ -154,7 +188,7 @@ fn incomplete_group_refunds_each_actual_contributor_at_expiry() {
     assert_eq!(f.balance(&third), 20);
     assert_eq!(
         f.client().try_refund(&f.id, &third),
-        Err(Ok(Error::NothingToRefund))
+        Err(Ok(Error::NothingToRefund.into()))
     );
 }
 
@@ -164,14 +198,17 @@ fn requires_provider_acceptance_and_rejects_duplicate_contribution() {
     let plan = f.group();
     assert_eq!(
         f.client().try_contribute(&f.id, &f.organizer),
-        Err(Ok(Error::InvalidState))
+        Err(Ok(Error::InvalidState.into()))
     );
     f.client().accept(&f.id);
-    assert_eq!(f.client().try_accept(&f.id), Err(Ok(Error::InvalidState)));
+    assert_eq!(
+        f.client().try_accept(&f.id),
+        Err(Ok(Error::InvalidState.into()))
+    );
     f.client().contribute(&f.id, &f.organizer);
     assert_eq!(
         f.client().try_contribute(&f.id, &f.organizer),
-        Err(Ok(Error::AlreadyContributed))
+        Err(Ok(Error::AlreadyContributed.into()))
     );
     assert_eq!(f.balance(&f.contract), plan.get(0).unwrap().1);
 }
@@ -184,22 +221,22 @@ fn outsiders_cannot_contribute_cancel_dispute_or_take_refunds() {
     f.client().accept(&f.id);
     assert_eq!(
         f.client().try_contribute(&f.id, &outsider),
-        Err(Ok(Error::Unauthorized))
+        Err(Ok(Error::Unauthorized.into()))
     );
     assert_eq!(
         f.client().try_cancel(&f.id, &outsider),
-        Err(Ok(Error::Unauthorized))
+        Err(Ok(Error::Unauthorized.into()))
     );
     f.client().contribute(&f.id, &f.organizer);
     assert_eq!(
         f.client().try_dispute(&f.id, &outsider),
-        Err(Ok(Error::Unauthorized))
+        Err(Ok(Error::Unauthorized.into()))
     );
     f.client().dispute(&f.id, &f.organizer);
     f.client().resolve(&f.id, &0);
     assert_eq!(
         f.client().try_refund(&f.id, &outsider),
-        Err(Ok(Error::Unauthorized))
+        Err(Ok(Error::Unauthorized.into()))
     );
     assert_eq!(f.client().refund(&f.id, &f.organizer), 100);
 }
@@ -211,24 +248,27 @@ fn dispute_stops_payout_and_split_refunds_preserve_rounding() {
     f.fund(&plan);
     f.client().submit(&f.id);
     f.client().dispute(&f.id, &plan.get(2).unwrap().0);
-    assert_eq!(f.client().try_release(&f.id), Err(Ok(Error::InvalidState)));
+    assert_eq!(
+        f.client().try_release(&f.id),
+        Err(Ok(Error::InvalidState.into()))
+    );
     assert_eq!(
         f.client().try_claim_payout(&f.id),
-        Err(Ok(Error::InvalidState))
+        Err(Ok(Error::InvalidState.into()))
     );
     assert_eq!(
         f.client().try_resolve(&f.id, &101),
-        Err(Ok(Error::InvalidTerms))
+        Err(Ok(Error::InvalidTerms.into()))
     );
     assert_eq!(
         f.client().try_resolve(&f.id, &-1),
-        Err(Ok(Error::InvalidTerms))
+        Err(Ok(Error::InvalidTerms.into()))
     );
     f.client().resolve(&f.id, &37);
     assert_eq!(f.balance(&f.provider), 37);
     assert_eq!(
         f.client().try_resolve(&f.id, &0),
-        Err(Ok(Error::InvalidState))
+        Err(Ok(Error::InvalidState.into()))
     );
     let mut returned = 0;
     for index in (0..4).rev() {
@@ -249,7 +289,7 @@ fn resolver_can_authorize_full_payout() {
     assert_eq!(f.client().get_booking(&f.id).state, State::Paid);
     assert_eq!(
         f.client().try_refund(&f.id, &f.organizer),
-        Err(Ok(Error::InvalidState))
+        Err(Ok(Error::InvalidState.into()))
     );
 }
 
@@ -259,8 +299,14 @@ fn provider_can_claim_only_after_two_day_review_period() {
     f.individual();
     f.fund(&vec![&f.env, (f.organizer.clone(), 100)]);
     f.client().submit(&f.id);
-    assert_eq!(f.client().try_submit(&f.id), Err(Ok(Error::InvalidState)));
-    assert_eq!(f.client().try_claim_payout(&f.id), Err(Ok(Error::TooEarly)));
+    assert_eq!(
+        f.client().try_submit(&f.id),
+        Err(Ok(Error::InvalidState.into()))
+    );
+    assert_eq!(
+        f.client().try_claim_payout(&f.id),
+        Err(Ok(Error::TooEarly.into()))
+    );
     f.env.ledger().set_timestamp(1_000 + REVIEW_PERIOD);
     f.client().claim_payout(&f.id);
     assert_eq!(f.balance(&f.provider), 100);
@@ -272,7 +318,10 @@ fn work_deadline_requires_dispute_resolution_instead_of_late_submission() {
     f.individual();
     f.fund(&vec![&f.env, (f.organizer.clone(), 100)]);
     f.env.ledger().set_timestamp(10_000);
-    assert_eq!(f.client().try_submit(&f.id), Err(Ok(Error::DeadlinePassed)));
+    assert_eq!(
+        f.client().try_submit(&f.id),
+        Err(Ok(Error::DeadlinePassed.into()))
+    );
     f.client().dispute(&f.id, &f.organizer);
     f.client().resolve(&f.id, &0);
     assert_eq!(f.client().refund(&f.id, &f.organizer), 100);
@@ -288,14 +337,14 @@ fn cancellation_returns_partial_funding_but_cannot_reverse_fully_funded_work() {
     assert_eq!(f.client().refund(&f.id, &f.organizer), 40);
     assert_eq!(
         f.client().try_contribute(&f.id, &plan.get(1).unwrap().0),
-        Err(Ok(Error::InvalidState))
+        Err(Ok(Error::InvalidState.into()))
     );
     let next = Fixture::new();
     next.individual();
     next.fund(&vec![&next.env, (next.organizer.clone(), 100)]);
     assert_eq!(
         next.client().try_cancel(&next.id, &next.organizer),
-        Err(Ok(Error::InvalidState))
+        Err(Ok(Error::InvalidState.into()))
     );
 }
 
@@ -313,13 +362,13 @@ fn invalid_plans_and_reused_identifiers_are_rejected() {
             &2_000,
             &10_000
         ),
-        Err(Ok(Error::InvalidTerms))
+        Err(Ok(Error::InvalidTerms.into()))
     );
     for amount in [0, -1, MAX_AMOUNT + 1] {
         let plan = vec![&f.env, (f.organizer.clone(), amount)];
         assert_eq!(
             client.try_create(&f.id, &f.organizer, &f.provider, &plan, &2_000, &10_000),
-            Err(Ok(Error::InvalidTerms))
+            Err(Ok(Error::InvalidTerms.into()))
         );
     }
     let absent_organizer = vec![&f.env, (Address::generate(&f.env), 100)];
@@ -332,7 +381,7 @@ fn invalid_plans_and_reused_identifiers_are_rejected() {
             &2_000,
             &10_000
         ),
-        Err(Ok(Error::InvalidTerms))
+        Err(Ok(Error::InvalidTerms.into()))
     );
     let plan = vec![&f.env, (f.organizer.clone(), 100)];
     for (funding, work) in [
@@ -342,13 +391,13 @@ fn invalid_plans_and_reused_identifiers_are_rejected() {
     ] {
         assert_eq!(
             client.try_create(&f.id, &f.organizer, &f.provider, &plan, &funding, &work),
-            Err(Ok(Error::InvalidTerms))
+            Err(Ok(Error::InvalidTerms.into()))
         );
     }
     f.individual();
     assert_eq!(
         client.try_create(&f.id, &f.organizer, &f.provider, &plan, &2_000, &10_000),
-        Err(Ok(Error::Exists))
+        Err(Ok(Error::Exists.into()))
     );
 }
 

@@ -4,7 +4,7 @@ CampusCrew helps students and neighbours find local service providers. People po
 
 The first service area is the University of Nigeria, Nsukka. Categories include cleaning, tutoring, hair and beauty, repairs, tech and design, and errands.
 
-The Stellar migration lives in the existing CampusCrew project. Run the Rust commands below from the project root. The frontend uses Stellar wallet sign-in and Testnet task data. Connecting this escrow to the frontend is the next payment milestone. Rust formatting passes; compilation and the 13 contract tests still need a successful Linux CI run because Windows Application Control blocks dependency build scripts locally.
+The Stellar migration lives in the existing CampusCrew project. Run the Rust commands below from the project root. The frontend uses Stellar wallet sign-in and Testnet task data. Connecting this escrow to the frontend is the next payment milestone. Rust formatting passes; compilation and the 14 contract tests still need a successful Linux CI run because Windows Application Control blocks dependency build scripts locally.
 
 ## Contract behaviour
 
@@ -33,7 +33,9 @@ cargo clippy --locked --all-targets -- -D warnings
 cargo build --locked --target wasm32v1-none --release
 ```
 
-The release artifact is `target/wasm32v1-none/release/campuscrew_escrow.wasm`. Local contract tests exercise the Soroban host with a test token. They do not create Stellar Testnet transactions.
+The release artifact is `target/wasm32v1-none/release/campuscrew_escrow.wasm`. After all checks pass, CI saves it as the `campuscrew-escrow-wasm` artifact for seven days. Local contract tests exercise the Soroban host with a test token. They do not create Stellar Testnet transactions.
+
+For methods that panic with a contract error and return `()`, generated client `try_*` methods wrap failures as `soroban_sdk::Error`. Assertions explicitly convert CampusCrew's error enum with `.into()` and still compare the exact expected code. CI publishes compiler errors as GitHub annotations so a failure can be diagnosed through the public Checks API.
 
 ### Signing dependency compatibility
 
