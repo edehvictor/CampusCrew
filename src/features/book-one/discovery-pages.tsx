@@ -12,7 +12,7 @@ type HomeProps = {
 };
 
 function CampusLogo() {
-  return <Image src="/campuses/unn.png" alt="University of Nigeria" width={912} height={677} className="campus-logo" />;
+  return <Image src="/campuses/unn.png" alt="University of Nigeria" width={960} height={1440} className="campus-logo" />;
 }
 
 export function Home({ jobs, onPost, onBrowse, onTask }: HomeProps) {
@@ -30,7 +30,7 @@ export function Home({ jobs, onPost, onBrowse, onTask }: HomeProps) {
           </div>
           <p className="home-escrow-note"><WalletCards size={16} aria-hidden="true" /> Funds stay in escrow until you confirm the task is complete.</p>
         </div>
-        <div className="home-hero-art"><Image src="/campuscrew-active-hero-v2.png" alt="A person uses a phone displaying ACTIVE" width={912} height={677} priority /></div>
+        <div className="home-hero-art"><Image src="/campuscrew-errand-hero.webp" alt="A student carrying groceries for a campus errand" width={960} height={1440} priority /></div>
       </section>
 
       <section className="home-services" aria-labelledby="services-title">
