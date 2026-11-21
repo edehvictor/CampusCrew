@@ -146,3 +146,18 @@
   .home-hero { grid-template-columns: minmax(0, 1fr); gap: 0; min-height: calc(100dvh - var(--workspace-header-height, 76px)); }
   .home-hero-art { display: none; }
 }
+
+/* A quiet grain layer behind the hero content. */
+.home-hero { position: relative; isolation: isolate; }
+.home-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: url('/noise.png');
+  background-repeat: repeat;
+  background-size: 220px 220px;
+  mix-blend-mode: multiply;
+  opacity: .035;
+}

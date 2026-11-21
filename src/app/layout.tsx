@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "@fontsource-variable/plus-jakarta-sans/wght.css";
 import "@fontsource-variable/eb-garamond/wght.css";
 import "./globals.css";
+import "@/components/brand-loader.css";
 
 export const metadata: Metadata = {
   title: "Campuscrew | Book local services",

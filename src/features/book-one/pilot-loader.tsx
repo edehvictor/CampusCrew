@@ -1,10 +1,11 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { BrandLoader } from "@/components/brand-loader";
 
 const StellarBoard = dynamic(() => import("./pilot-board").then(module => module.PilotBoard), {
   ssr: false,
-  loading: () => <main className="book-one" role="status">Loading CampusCrew…</main>,
+  loading: () => <BrandLoader />,
 });
 
 export function PilotLoader() {

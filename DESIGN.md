@@ -24,3 +24,5 @@ Drips Wave uses a persistent navigation column, groups actions by role, and keep
 - Keep category, location, budget, and application count visible in the list. Give the selected task's scope and next action room in the detail pane.
 
 - On mobile, show the brand mark alone in the header. The Home hero fills the viewport below the header and hides the illustration so the heading and actions have space.
+
+- Use the brand mark with a delivery orbit and three sequential dots during initial loading. Respect reduced-motion preferences and never delay entry for the animation. The Home hero uses the supplied repeating grain texture at 3.5% opacity, behind content with no pointer interactions.
