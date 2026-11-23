@@ -147,6 +147,40 @@
   .home-hero-art { display: none; }
 }
 
+/* Keep campus cards readable on phones instead of squeezing them into columns. */
+@media (max-width: 560px) {
+  .campus-grid {
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    max-width: 440px;
+    gap: 12px;
+  }
+
+  .active-campus-card,
+  .upcoming-campus-card {
+    min-width: 0;
+    padding: 20px;
+  }
+
+  .active-campus-card h2,
+  .upcoming-campus-card h2 {
+    font-size: clamp(27px, 8vw, 34px);
+    overflow-wrap: normal;
+  }
+
+  .campus-identity {
+    min-height: 66px;
+  }
+
+  .campus-logo {
+    width: min(100%, 230px);
+  }
+
+  .campus-growth-art {
+    min-height: 86px;
+  }
+}
+
 /* A quiet grain layer behind the hero content. */
 .home-hero { position: relative; isolation: isolate; }
 .home-hero::before {
