@@ -79,3 +79,37 @@ cargo build --locked --target wasm32v1-none --release
 See ROADMAP.md for the Stellar migration and buildathon delivery targets, DESIGN.md for layout and brand conventions, and AGENTS.md for repository guidance.
 
 Based on the [Chucks1093 Next.js server template](https://github.com/Chucks1093/templates/tree/main/nextjs-server-template).
+
+
+## Booking experience, evidence and reviews
+
+Apply these updates in order after the existing Stellar migrations:
+
+1. supabase/migrations/20261123000100_marketplace_experience.sql
+2. supabase/migrations/20261123000200_reputation_queries.sql
+3. supabase/migrations/20261123000300_refund_notifications.sql
+
+They add private notifications, booking messages and event history, completion evidence, and two-way booking reviews. The second migration backfills a review-window start for already-paid pilot bookings at migration time; it does not claim to reconstruct their historical payout timestamps. The first two updates were checked against the connected development database on November 23; the user also confirmed the refund-alert update succeeded.
+
+Evidence is optional by default. A task owner can require a photo or document when posting; the choice cannot be changed after booking through the app. Only the selected provider can upload before submitting completion. A private storage bucket holds up to three JPEG/PNG/WebP/PDF files of at most 5 MB each. Server checks enforce participants, actual file signatures, current booking state and limits. Downloads use participant-authorized, short-lived attachment URLs. A completion note is still required. Do not include sensitive document contents in public descriptions.
+
+Reviews require a confirmed Paid booking and settlement receipt. Each side can review once within 14 days of settlement. Public reviews unlock after both respond or the settlement review window expires. Ratings and completed-booking metrics are computed on the server. All current feedback and earnings are identified as Testnet activity and must not be reused as production reputation. Identity or campus affiliation is not inferred from wallet ownership. Student-email verification is deliberately not a registration requirement or a shipped badge.
+
+Personal routes live under /me: tasks, applications, bookings (including /me/bookings/BOOKING_UUID), profile, notifications and earnings. Each API derives ownership from the signed session. Public provider profiles use a separate opaque profile UUID. Application filters include Pending, Selected and Not selected. Bookings have Active, Completed and Cancelled/refund filters. No Settings menu is added.
+
+## Automatic updates and phone installation
+
+Open pages receive authenticated server-sent snapshots; the stream revalidates the session and reconnects periodically. It uses the existing HTTP-only session, so there is no extra login or public booking subscription. Disconnected/unsupported streams fall back to automatic snapshot checks while the page is visible. Pending Stellar submissions are checked against RPC before a payment update is recorded. Database triggers persist deduplicated participant notifications in the same transaction as each event. Confirmations are asynchronous: this is not a promise of instantaneous delivery.
+
+Run the app in one terminal and a worker in another:
+
+    npm.cmd run dev
+    npm.cmd run experience:worker
+
+The worker calls the protected /api/internal/experience-worker endpoint every ten seconds, reconciles submitted transactions, observes active bookings for external resolver decisions, and sends queued push notifications. It can also be scheduled by an external service using an Authorization: Bearer header containing EXPERIENCE_WORKER_SECRET. Run a durable worker in production; browser streams alone cannot reconcile after all browsers close. Do not expose worker or VAPID private keys to the client. A one-cycle check is available with npm.cmd run experience:worker -- --once. Alerts retry up to five times; invalid subscriptions are removed. OS delivery and connectivity can delay push. Notification bodies are generic to protect booking details on lock screens.
+
+PWA files: src/app/manifest.ts, public/sw.js, public/offline.html and public/icons. The worker caches only the generic offline page, never authenticated bookings, sessions, private files or payment APIs. Production installation and web push require HTTPS. On iPhone, add CampusCrew to the Home Screen and enable notifications through a deliberate tap. Android installation can use the browser prompt/menu. An installed app still needs a network connection to transact.
+
+Local VAPID keys and a worker secret were generated in the ignored .env.local. For a deployment, copy those values securely into the host's environment: NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT, EXPERIENCE_WORKER_SECRET, and set CAMPUSCREW_WORKER_ORIGIN on the worker host. Configure VAPID_SUBJECT to a project URL or contact address you control. Restart Next.js after changing environment values. Phone notifications are opt-in and a browser wallet's mainnet/testnet settings still apply.
+
+Next browser acceptance: two wallets complete a 1-test-USDC booking without manual refresh; completion evidence is private and enforced when requested; each sees the other's message; payout opens review; duplicate/ineligible reviews fail; provider metrics and private earnings match receipts. Separately test refunds, reconnects, expired review windows and phone push with consent. Book Together remains a separate implementation milestone; this release does not enable shared contributions or identity checks.

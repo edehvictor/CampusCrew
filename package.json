@@ -11,7 +11,8 @@
     "stellar:deploy": "node scripts/deploy-stellar-testnet.mjs",
     "stellar:enable": "node scripts/enable-stellar-escrow.mjs",
     "stellar:smoke": "node scripts/smoke-stellar-testnet.mjs",
-    "stellar:resolve": "node scripts/resolve-stellar-dispute.mjs"
+    "stellar:resolve": "node scripts/resolve-stellar-dispute.mjs",
+    "experience:worker": "node scripts/experience-worker.mjs"
   },
   "dependencies": {
     "@creit.tech/stellar-wallets-kit": "2.8.0",
@@ -23,6 +24,7 @@
     "next": "16.1.6",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "web-push": "3.6.7",
     "zod": "^4.1.5"
   },
   "devDependencies": {
@@ -30,6 +32,7 @@
     "@types/node": "^20",
     "@types/react": "18.2.79",
     "@types/react-dom": "18.2.25",
+    "@types/web-push": "^3.6.4",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "typescript": "^5"

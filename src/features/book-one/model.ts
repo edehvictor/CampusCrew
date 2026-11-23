@@ -1,9 +1,37 @@
-export const categories = ["Cleaning", "Hair & beauty", "Tutoring", "Repairs", "Tech & design", "Errands"] as const;
+export const categories = [
+  "Cleaning",
+  "Hair & beauty",
+  "Tutoring",
+  "Repairs",
+  "Tech & design",
+  "Errands",
+] as const;
 
 export type Category = (typeof categories)[number];
-export type View = "Browse tasks" | "Posted tasks" | "Sent applications" | "Bookings";
-export type Page = View | "Home" | "Explore campuses";
-export type Status = "Open" | "Awaiting funding" | "Funded" | "Ready for review" | "Paid" | "Refunded" | "Disputed" | "Refund available" | "Cancelled";
+export type View =
+  | "Browse tasks"
+  | "Posted tasks"
+  | "Sent applications"
+  | "Bookings";
+export type Page =
+  | View
+  | "Home"
+  | "Explore campuses"
+  | "Find providers"
+  | "Provider profile"
+  | "My profile"
+  | "Earnings"
+  | "Notifications";
+export type Status =
+  | "Open"
+  | "Awaiting funding"
+  | "Funded"
+  | "Ready for review"
+  | "Paid"
+  | "Refunded"
+  | "Disputed"
+  | "Refund available"
+  | "Cancelled";
 export type Quote = {
   id: string;
   provider: string;
@@ -11,6 +39,8 @@ export type Quote = {
   availability: string;
   note: string;
   own?: boolean;
+  profileId?: string;
+  reputation?: import("./experience-types").Reputation;
   bio?: string;
   skills?: Category[];
   coverage?: string[];
@@ -29,12 +59,30 @@ export type Job = {
   accepted?: string;
   status: Status;
   completion?: string;
+  evidenceRequired?: boolean;
+  reviewed?: boolean;
   applicationCount?: number;
   payment?: {
-    fundingTx: string | null; settlementTx: string | null; refundAfter: number | null;
-    operations?: ("create" | "accept" | "fund" | "submit" | "release" | "claim" | "cancel" | "refund" | "dispute")[];
-    state?: string; contract?: string; resolver?: string;
-    fundingDeadline?: number; workDeadline?: number; reviewDeadline?: number;
+    fundingTx: string | null;
+    settlementTx: string | null;
+    refundAfter: number | null;
+    operations?: (
+      | "create"
+      | "accept"
+      | "fund"
+      | "submit"
+      | "release"
+      | "claim"
+      | "cancel"
+      | "refund"
+      | "dispute"
+    )[];
+    state?: string;
+    contract?: string;
+    resolver?: string;
+    fundingDeadline?: number;
+    workDeadline?: number;
+    reviewDeadline?: number;
   } | null;
 };
 
@@ -48,8 +96,12 @@ export function isInView(job: Job, view: View) {
     case "Posted tasks":
       return Boolean(job.own);
     case "Sent applications":
-      return job.quotes.some(quote => quote.own);
+      return job.quotes.some((quote) => quote.own);
     case "Bookings":
-      return Boolean(job.accepted && (job.own || job.quotes.some(quote => quote.id === job.accepted && quote.own)));
+      return Boolean(
+        job.accepted &&
+          (job.own ||
+            job.quotes.some((quote) => quote.id === job.accepted && quote.own)),
+      );
   }
 }

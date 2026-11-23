@@ -28,3 +28,7 @@ Drips Wave uses a persistent navigation column, groups actions by role, and keep
 - Use the brand mark with a delivery orbit and three sequential dots during initial loading. Respect reduced-motion preferences and never delay entry for the animation. The Home hero uses the supplied repeating grain texture, inverted to make its white translucent pixels dark, at 60% layer opacity (the source alpha peaks at 16%, giving about 10% maximum visible grain), behind content with no pointer interactions.
 
 - The hero grain spans the full main content width, from the sidebar edge to the page edge. Keep the hero content and lower sections within the shared 1440px container and responsive gutters.
+
+## Booking experience
+
+Keep one current status and next action visible. Put wallet technical details and receipts in expandable sections, while showing the review/claim deadline when work is submitted. Work/evidence, messages and activity share a booking workspace. Reviews are dismissible and never gate payout. The account menu stays compact, with View profile and editing controls but no Settings entry. Use precise Testnet labels for ratings and earnings; never award a generic Verified badge for a connected wallet.

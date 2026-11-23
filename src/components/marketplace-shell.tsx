@@ -1,16 +1,41 @@
-import { BriefcaseBusiness, ChevronRight, ClipboardList, Compass, GraduationCap, House, LogOut, Menu, Plus, Send, X } from "lucide-react";
+import Link from "next/link";
+import { pageHref } from "@/features/book-one/navigation";
+import {
+  Users,
+  Wallet,
+  BriefcaseBusiness,
+  ChevronRight,
+  ClipboardList,
+  Compass,
+  GraduationCap,
+  House,
+  LogOut,
+  Menu,
+  Plus,
+  Send,
+  X,
+} from "lucide-react";
 import { useState, type ReactNode } from "react";
 import type { Page } from "@/features/book-one/model";
 import "./marketplace-shell.css";
 
 const navigation = [
-  { label: "Marketplace", items: [{ view: "Home", icon: House }, { view: "Explore campuses", icon: GraduationCap }, { view: "Browse tasks", icon: Compass }] },
+  {
+    label: "Marketplace",
+    items: [
+      { view: "Home", icon: House },
+      { view: "Explore campuses", icon: GraduationCap },
+      { view: "Browse tasks", icon: Compass },
+      { view: "Find providers", icon: Users },
+    ],
+  },
   {
     label: "My activity",
     items: [
       { view: "Posted tasks", icon: ClipboardList },
       { view: "Sent applications", icon: Send },
       { view: "Bookings", icon: BriefcaseBusiness },
+      { view: "Earnings", icon: Wallet },
     ],
   },
 ] as const;
@@ -24,7 +49,14 @@ type Props = {
   children: ReactNode;
 };
 
-export function MarketplaceShell({ view, onNavigate, onPost, accountControl, logout, children }: Props) {
+export function MarketplaceShell({
+  view,
+  onNavigate,
+  onPost,
+  accountControl,
+  logout,
+  children,
+}: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   function navigate(next: Page) {
@@ -34,27 +66,36 @@ export function MarketplaceShell({ view, onNavigate, onPost, accountControl, log
 
   return (
     <div className="marketplace-shell" data-menu={menuOpen ? "open" : "closed"}>
-      <a className="skip-link" href="#marketplace-main">Skip to content</a>
+      <a className="skip-link" href="#marketplace-main">
+        Skip to content
+      </a>
       <aside className="workspace-sidebar" id="workspace-sidebar">
-        <button className="brand" type="button" onClick={() => navigate("Home")}>
+        <button
+          className="brand"
+          type="button"
+          onClick={() => navigate("Home")}
+        >
           <span className="brand-mark" aria-hidden="true" />
           Campuscrew
         </button>
         <nav aria-label="Main navigation">
-          {navigation.map(group => (
+          {navigation.map((group) => (
             <div className="navigation-group" key={group.label}>
               <p>{group.label}</p>
               {group.items.map(({ view: item, icon: Icon }) => (
-                <button
+                <Link
+                  href={pageHref(item)}
                   key={item}
                   className="navigation-item"
-                  type="button"
                   aria-current={view === item ? "page" : undefined}
-                  onClick={() => navigate(item)}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    navigate(item);
+                  }}
                 >
                   <Icon aria-hidden="true" size={18} />
                   <span>{item}</span>
-                </button>
+                </Link>
               ))}
             </div>
           ))}
@@ -65,7 +106,10 @@ export function MarketplaceShell({ view, onNavigate, onPost, accountControl, log
               className="navigation-item"
               type="button"
               disabled={logout.pending}
-              onClick={() => { setMenuOpen(false); logout.run(); }}
+              onClick={() => {
+                setMenuOpen(false);
+                logout.run();
+              }}
             >
               <LogOut aria-hidden="true" size={18} />
               <span>Log out</span>
@@ -83,23 +127,51 @@ export function MarketplaceShell({ view, onNavigate, onPost, accountControl, log
               aria-label={menuOpen ? "Close navigation" : "Open navigation"}
               aria-controls="workspace-sidebar"
               aria-expanded={menuOpen}
-              onClick={() => setMenuOpen(open => !open)}
+              onClick={() => setMenuOpen((open) => !open)}
             >
-              {menuOpen ? <X size={19} aria-hidden="true" /> : <Menu size={19} aria-hidden="true" />}
+              {menuOpen ? (
+                <X size={19} aria-hidden="true" />
+              ) : (
+                <Menu size={19} aria-hidden="true" />
+              )}
             </button>
-            <span className="mobile-brand" role="img" aria-label="Campuscrew"><span className="brand-mark" aria-hidden="true" /></span>
+            <span className="mobile-brand" role="img" aria-label="Campuscrew">
+              <span className="brand-mark" aria-hidden="true" />
+            </span>
             <span className="workspace-crumb">
-              {["Home", "Explore campuses", "Browse tasks"].includes(view) ? "Marketplace" : "My activity"} <ChevronRight size={13} aria-hidden="true" /> <strong>{view}</strong>
+              {[
+                "Home",
+                "Explore campuses",
+                "Browse tasks",
+                "Find providers",
+                "Provider profile",
+              ].includes(view)
+                ? "Marketplace"
+                : "My activity"}{" "}
+              <ChevronRight size={13} aria-hidden="true" />{" "}
+              <strong>{view}</strong>
             </span>
           </div>
           <div className="workspace-actions">
-            <button type="button" className="button button-primary" aria-label="Post a task" onClick={() => { setMenuOpen(false); onPost(); }}>
-              <Plus size={18} aria-hidden="true" /> <span className="post-desktop">Post a task</span><span className="post-mobile">Post</span>
+            <button
+              type="button"
+              className="button button-primary"
+              aria-label="Post a task"
+              onClick={() => {
+                setMenuOpen(false);
+                onPost();
+              }}
+            >
+              <Plus size={18} aria-hidden="true" />{" "}
+              <span className="post-desktop">Post a task</span>
+              <span className="post-mobile">Post</span>
             </button>
             {accountControl}
           </div>
         </header>
-        <main id="marketplace-main" tabIndex={-1}>{children}</main>
+        <main id="marketplace-main" tabIndex={-1}>
+          {children}
+        </main>
       </div>
     </div>
   );

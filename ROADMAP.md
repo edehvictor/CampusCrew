@@ -78,3 +78,11 @@ Demonstrate three journeys with test funds: individual completion and payout, sh
 Measure tasks receiving suitable applications, time to first application, completed bookings, successfully funded groups, returning providers, repeat bookings, cancellations, and disputes. Count actual confirmed transactions, including group contributions, rather than assuming two transactions per booking.
 
 Before a paid launch, complete the contract review and confirm an end-to-end funding and cash-out route with the selected payment partner.
+
+## November 23 experience implementation
+
+Individual funding and payout were verified from user-provided Testnet transactions: funding 127164d5b785359ff2e80885f659ad4822853dffeb9abf2419f8bb94fe0a6555 and release 843728aa2d6afd88df7fa02477f363c45d191d08aad35932afbc8393a400c05a. Horizon reported 1 test USDC into the deployed escrow and 1 test USDC out to the provider for the same booking. Refund browser verification remains outstanding.
+
+Implemented routes, private event history/messages/evidence, automatic authenticated update streams with fallback, a durable reconciliation/push worker, notification inbox, PWA installation, provider profiles and transparent Testnet metrics, completed-booking filters, private earnings and post-payout reviews. The first two experience migrations were checked in development Supabase, and the user confirmed the follow-up refund-alert migration succeeded. Database tests exercise participant access, evidence gating, review windows/publication and event deduplication. Production worker hosting, phone push delivery, mobile browser QA and a fresh two-wallet experience run still need validation. Book Together and campus-email/identity checking remain unimplemented.
+
+Validation for this update: ESLint and the production Next.js build passed, and all 41 application/database tests passed, including private evidence, review publication and confirmed refund notification deduplication. New browser and phone checks remain outstanding.
