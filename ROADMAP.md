@@ -88,3 +88,5 @@ Implemented routes, private event history/messages/evidence, automatic authentic
 Validation for this update: ESLint and the production Next.js build passed, and all 41 application/database tests passed, including private evidence, review publication and confirmed refund notification deduplication. New browser and phone checks remain outstanding.
 
 November 23 navigation/payment UI refinement: moved page entry points into a shared marketplace layout to preserve the session across navigation. Added request deduplication and stale-session response protection. Redesigned campus discovery and the earnings/payment ledger with actual receipt-backed records, participant roles, status/search filters, CSV export and accessible receipt details. All 48 application tests, lint and the production build passed before formatting; interactive browser confirmation remains pending because the computer-use helper is unavailable. No new database migration is required.
+
+At the user request, restored the previous Explore campuses design. The redesigned payment history, shared marketplace layout and session-request protection remain in place.

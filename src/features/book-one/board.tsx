@@ -367,13 +367,7 @@ export function BookOneBoard({ live }: { live: LiveBoardActions }) {
           onTask={(job) => navigate("Browse tasks", job.id)}
         />
       ) : page === "Explore campuses" ? (
-        <ExploreCampuses
-          jobs={jobs}
-          onOpen={(category) => {
-            navigate("Browse tasks");
-            if (category) setFilters({ ...emptyFilters, category });
-          }}
-        />
+        <ExploreCampuses onOpen={() => navigate("Browse tasks")} />
       ) : (
         <div className="book-one">
           <header className="board-intro">

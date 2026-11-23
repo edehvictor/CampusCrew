@@ -37,8 +37,8 @@ Keep one current status and next action visible. Put wallet technical details an
 
 Keep the wallet/session board in the shared marketplace layout so route changes preserve the account and update stream. Disable the account button during the initial check without adding a loading caption. Merge overlapping background snapshot requests; sign-in, sign-out and mutations request fresh snapshots.
 
-Explore campuses gives UNN one active campus panel, its supplied official logo, a live open-task count and category shortcuts. Expansion stays in a compact non-interactive note. The decorative campus locator is an illustration, not a geographical map.
+Keep the previous Explore campuses layout: the active UNN card with its supplied logo and Explore UNN tasks action, alongside the general Coming soon card. The user preferred this version; preserve it while refining other screens.
 
 Earnings & payments uses a restrained lavender earnings card, separate escrow/spending summaries, searchable status filters, receipt details and CSV export. Settled income is separate from escrow. Only selected participants see private payment records; selection alone never counts as payment. Dates are explicitly CampusCrew recording dates, including the documented pilot backfill. Never invent growth charts or transaction timestamps.
 
-Research: [Wise transaction history](https://wise.com/help/articles/2489458/how-do-i-download-my-transaction-history) and [Stripe payment-data export](https://support.stripe.com/questions/exporting-payment-data) informed filtering, status separation and receipts; [Airbnb destination search](https://www.airbnb.com/help/article/252) informed location-first discovery.
+Research: [Wise transaction history](https://wise.com/help/articles/2489458/how-do-i-download-my-transaction-history) and [Stripe payment-data export](https://support.stripe.com/questions/exporting-payment-data) informed filtering, status separation and receipts.
