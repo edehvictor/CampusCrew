@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
-import Home from "../page";
-export const dynamic = "force-dynamic";
+
 export default async function AppPage({
   params,
 }: {
@@ -14,5 +13,5 @@ export default async function AppPage({
     )
   )
     notFound();
-  return <Home />;
+  return null;
 }

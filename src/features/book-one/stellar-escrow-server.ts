@@ -32,6 +32,7 @@ type EscrowRow = EscrowTerms & {
   checked_ledger: number;
   funding_tx: string | null;
   settlement_tx: string | null;
+  settled_at?: string | null;
   completion_note: string | null;
 };
 type PaymentIntent = {
@@ -521,6 +522,8 @@ export async function enrichEscrowJobs(
       payment: {
         fundingTx: row.funding_tx,
         settlementTx: row.settlement_tx,
+        settledAt: row.settled_at ?? null,
+        refundAmount: chain ? Number(chain.refund_pool) / 10_000_000 : undefined,
         refundAfter: null,
         state: state ?? "Uncreated",
         operations: permittedOperations(

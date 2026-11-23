@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { disablePhonePush } from "@/components/pwa-controls";
 import { Bell, CircleUserRound, Wallet } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Networks } from "@creit.tech/stellar-wallets-kit/types";
 import { BookOneBoard } from "./board";
+import { createSnapshotLoader } from "./snapshot-loader";
 import { getStellarWallet } from "./pilot-wallet";
 import { signPreparedWalletTransaction } from "./wallet-signing";
 import { PilotDialog, type PilotPanel } from "./pilot-dialog";
@@ -65,6 +66,9 @@ async function api<T>(
 
 export function PilotBoard() {
   const [snapshot, setSnapshot] = useState(blank);
+  const [sessionState, setSessionState] = useState<
+    "loading" | "ready" | "error"
+  >("loading");
   const [connectedWallet, setConnectedWallet] = useState<string>();
   const [banner, setBanner] = useState("");
   const [panel, setPanel] = useState<PilotPanel | null>(null);
@@ -75,22 +79,27 @@ export function PilotBoard() {
   const [connected, setConnected] = useState(false);
   const pending = useRef<EntryIntent | null>(null);
   const working = useRef(false);
-  const version = useRef(0);
   const account = snapshot.account;
   const profile = account?.profile ?? null;
   const accountWallet = account?.wallet;
 
-  const load = useCallback(async () => {
-    const id = ++version.current;
-    const data = await api<PilotSnapshot>("/api/book-one");
-    if (id === version.current) setSnapshot(data);
-    return data;
-  }, []);
+  const [load] = useState(() =>
+    createSnapshotLoader(
+      () => api<PilotSnapshot>("/api/book-one"),
+      (data) => {
+        setSnapshot(data);
+        setSessionState("ready");
+      },
+    ),
+  );
 
   useEffect(() => {
     let active = true;
     void load().catch((cause) => {
-      if (active) setBanner(message(cause));
+      if (active) {
+        setBanner(message(cause));
+        setSessionState("error");
+      }
     });
     return () => {
       active = false;
@@ -197,6 +206,10 @@ export function PilotBoard() {
   }
 
   function prepare(intent: EntryIntent) {
+    if (sessionState !== "ready") {
+      setBanner("Your account is loading. Please try again shortly.");
+      return false;
+    }
     const task =
       intent.kind === "quote"
         ? snapshot.jobs.find((job) => job.id === intent.requestId)
@@ -262,7 +275,7 @@ export function PilotBoard() {
       signature: signed.signedMessage,
     });
     setBanner("");
-    finishSetup(await load());
+    finishSetup(await load(true));
   }
 
   async function mutate(mutation: PilotMutation) {
@@ -271,13 +284,13 @@ export function PilotBoard() {
       "POST",
       mutation,
     );
-    await load();
+    await load(true);
     return result;
   }
 
   async function saveProfile(next: PilotProfile) {
     await api("/api/book-one", "POST", { action: "profile", profile: next });
-    finishSetup(await load());
+    finishSetup(await load(true));
   }
 
   async function signOut() {
@@ -291,7 +304,7 @@ export function PilotBoard() {
     setPanel(null);
     setBanner("");
     await getStellarWallet().disconnect();
-    await load();
+    await load(true);
   }
 
   async function pay(
@@ -307,7 +320,7 @@ export function PilotBoard() {
         "POST",
         { action: "sync", requestId },
       );
-      await load();
+      await load(true);
       return result.message;
     }
     const kit = getStellarWallet();
@@ -346,7 +359,7 @@ export function PilotBoard() {
         xdr: signed.signedTxXdr,
       },
     );
-    await load();
+    await load(true);
     return result.message;
   }
 
@@ -365,32 +378,54 @@ export function PilotBoard() {
     .slice(0, 2)
     .join("")
     .toUpperCase();
-  const accountControl = account ? (
-    <button
-      type="button"
-      className="pilot-profile-button pilot-account"
-      onClick={() => {
-        setError("");
-        setPanel(profile ? "account" : "profile");
-      }}
-    >
-      <span className="avatar" aria-hidden="true">
-        {initials || <CircleUserRound size={20} />}
-      </span>
-      <span>{name}</span>
-    </button>
-  ) : (
-    <button
-      type="button"
-      className="button button-secondary pilot-connect"
-      onClick={() => {
-        setError("");
-        setPanel("wallet");
-      }}
-    >
-      <Wallet size={17} aria-hidden="true" /> <span>Connect wallet</span>
-    </button>
-  );
+  const accountControl =
+    sessionState !== "ready" ? (
+      <button
+        type="button"
+        className="button button-secondary pilot-connect"
+        disabled={sessionState === "loading"}
+        aria-busy={sessionState === "loading"}
+        onClick={() => {
+          setSessionState("loading");
+          void load()
+            .then(() => setBanner(""))
+            .catch((cause) => {
+              setSessionState("error");
+              setBanner(message(cause));
+            });
+        }}
+      >
+        <CircleUserRound size={17} aria-hidden="true" />
+        <span>
+          {sessionState === "loading" ? "Connect wallet" : "Retry connection"}
+        </span>
+      </button>
+    ) : account ? (
+      <button
+        type="button"
+        className="pilot-profile-button pilot-account"
+        onClick={() => {
+          setError("");
+          setPanel(profile ? "account" : "profile");
+        }}
+      >
+        <span className="avatar" aria-hidden="true">
+          {initials || <CircleUserRound size={20} />}
+        </span>
+        <span>{name}</span>
+      </button>
+    ) : (
+      <button
+        type="button"
+        className="button button-secondary pilot-connect"
+        onClick={() => {
+          setError("");
+          setPanel("wallet");
+        }}
+      >
+        <Wallet size={17} aria-hidden="true" /> <span>Connect wallet</span>
+      </button>
+    );
   const unread =
     snapshot.notifications?.filter((item) => !item.read_at).length ?? 0;
   const accountAndNotifications = (
@@ -425,7 +460,7 @@ export function PilotBoard() {
       </small>
       {snapshot.syncWarning && (
         <p role="status">
-          Payment confirmation is delayed; we're checking again automatically.
+          Payment confirmation is delayed; we are checking again automatically.
         </p>
       )}
       {snapshot.experienceReady === false && (
@@ -444,6 +479,7 @@ export function PilotBoard() {
       <BookOneBoard
         live={{
           jobs: snapshot.jobs,
+          sessionReady: sessionState === "ready",
           accountControl: accountAndNotifications,
           wallet: account?.wallet,
           notifications: snapshot.notifications ?? [],

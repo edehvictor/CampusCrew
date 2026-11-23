@@ -65,6 +65,8 @@ export type Job = {
   payment?: {
     fundingTx: string | null;
     settlementTx: string | null;
+    settledAt?: string | null;
+    refundAmount?: number;
     refundAfter: number | null;
     operations?: (
       | "create"

@@ -32,3 +32,13 @@ Drips Wave uses a persistent navigation column, groups actions by role, and keep
 ## Booking experience
 
 Keep one current status and next action visible. Put wallet technical details and receipts in expandable sections, while showing the review/claim deadline when work is submitted. Work/evidence, messages and activity share a booking workspace. Reviews are dismissible and never gate payout. The account menu stays compact, with View profile and editing controls but no Settings entry. Use precise Testnet labels for ratings and earnings; never award a generic Verified badge for a connected wallet.
+
+## Campus discovery and payment history
+
+Keep the wallet/session board in the shared marketplace layout so route changes preserve the account and update stream. Disable the account button during the initial check without adding a loading caption. Merge overlapping background snapshot requests; sign-in, sign-out and mutations request fresh snapshots.
+
+Explore campuses gives UNN one active campus panel, its supplied official logo, a live open-task count and category shortcuts. Expansion stays in a compact non-interactive note. The decorative campus locator is an illustration, not a geographical map.
+
+Earnings & payments uses a restrained lavender earnings card, separate escrow/spending summaries, searchable status filters, receipt details and CSV export. Settled income is separate from escrow. Only selected participants see private payment records; selection alone never counts as payment. Dates are explicitly CampusCrew recording dates, including the documented pilot backfill. Never invent growth charts or transaction timestamps.
+
+Research: [Wise transaction history](https://wise.com/help/articles/2489458/how-do-i-download-my-transaction-history) and [Stripe payment-data export](https://support.stripe.com/questions/exporting-payment-data) informed filtering, status separation and receipts; [Airbnb destination search](https://www.airbnb.com/help/article/252) informed location-first discovery.

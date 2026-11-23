@@ -1,18 +1,12 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import {
-  Star,
-  MapPin,
-  Bell,
-  Wallet,
-  Users,
-  BriefcaseBusiness,
-} from "lucide-react";
+import { Star, MapPin, Bell } from "lucide-react";
 import { PwaControls } from "@/components/pwa-controls";
 import { ProfileBalance } from "./profile-balance";
 import { WalletAddress } from "./wallet-address";
-import { categories, price, type Job, type Page } from "./model";
+import { categories, type Job, type Page } from "./model";
+import { EarningsPage } from "./earnings-page";
 import type {
   ActivityNotification,
   PublicProvider,
@@ -124,66 +118,7 @@ export function ExperiencePage({
         </div>
       </div>
     );
-  if (page === "Earnings") {
-    const bookings = jobs.filter((j) =>
-      j.quotes.some((q) => q.own && q.id === j.accepted),
-    );
-    const paid = bookings.filter(
-        (j) => j.status === "Paid" && j.payment?.settlementTx,
-      ),
-      held = bookings.filter((j) =>
-        ["Funded", "Ready for review", "Disputed"].includes(j.status),
-      );
-    const total = (items: Job[]) =>
-      items.reduce(
-        (sum, j) =>
-          sum + (j.quotes.find((q) => q.id === j.accepted)?.amount ?? 0),
-        0,
-      );
-    return (
-      <div className="experience-page">
-        <p className="discovery-eyebrow">Your work</p>
-        <h1>Earnings</h1>
-        <p>
-          Stellar Testnet / Test funds only. Earnings are different from your
-          wallet balance.
-        </p>
-        <div className="earnings-grid">
-          <article>
-            <Wallet />
-            <small>Confirmed payouts</small>
-            <strong>{price(total(paid))}</strong>
-          </article>
-          <article>
-            <BriefcaseBusiness />
-            <small>Held in escrow</small>
-            <strong>{price(total(held))}</strong>
-          </article>
-          <article>
-            <Users />
-            <small>Paid bookings</small>
-            <strong>{paid.length}</strong>
-          </article>
-        </div>
-        <h2>Payment history</h2>
-        {!paid.length && <p>No confirmed payouts yet.</p>}
-        {paid.map((j) => (
-          <Link
-            className="history-row"
-            key={j.id}
-            href={"/me/bookings/" + j.id}
-          >
-            <span>{j.title}</span>
-            <strong>
-              {price(j.quotes.find((q) => q.id === j.accepted)?.amount ?? 0)}
-            </strong>
-            <span>Paid</span>
-          </Link>
-        ))}
-        {wallet && <ProfileBalance wallet={wallet} />}
-      </div>
-    );
-  }
+  if (page === "Earnings") return <EarningsPage jobs={jobs} />;
   const profile = providers[0];
   const list = providers.filter(
     (p) =>

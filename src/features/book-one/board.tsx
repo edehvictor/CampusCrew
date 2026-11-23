@@ -58,6 +58,7 @@ const viewCopy: Record<View, { title: string; introduction: string }> = {
 
 export type LiveBoardActions = {
   jobs: Job[];
+  sessionReady: boolean;
   wallet?: string;
   notifications: ActivityNotification[];
   experienceReady: boolean;
@@ -331,11 +332,15 @@ export function BookOneBoard({ live }: { live: LiveBoardActions }) {
         <div className="experience-page experience-empty">
           <h1>Your campus activity</h1>
           <p>
-            Sign in with your wallet to see your tasks, bookings and earnings.
+            {live.sessionReady
+              ? "Sign in with your wallet to see your tasks, bookings and earnings."
+              : "Your activity will appear here shortly. If loading fails, use Retry connection above."}
           </p>
-          <button className="button button-primary" onClick={live.signIn}>
-            Connect wallet
-          </button>
+          {live.sessionReady && (
+            <button className="button button-primary" onClick={live.signIn}>
+              Connect wallet
+            </button>
+          )}
         </div>
       ) : extraPage ? (
         <ExperiencePage
@@ -362,7 +367,13 @@ export function BookOneBoard({ live }: { live: LiveBoardActions }) {
           onTask={(job) => navigate("Browse tasks", job.id)}
         />
       ) : page === "Explore campuses" ? (
-        <ExploreCampuses onOpen={() => navigate("Browse tasks")} />
+        <ExploreCampuses
+          jobs={jobs}
+          onOpen={(category) => {
+            navigate("Browse tasks");
+            if (category) setFilters({ ...emptyFilters, category });
+          }}
+        />
       ) : (
         <div className="book-one">
           <header className="board-intro">
