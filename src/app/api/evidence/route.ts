@@ -15,6 +15,9 @@ import {
   evidenceMime,
 } from "@/features/book-one/services/evidence-validation";
 import { PilotError } from "@/features/book-one/pilot-error";
+import { getEscrowConfig } from "@/features/book-one/services/stellar-escrow-server";
+import { isResolverWallet } from "@/features/book-one/auth/resolver-access";
+import { readEvidenceAsResolver } from "@/features/book-one/services/dispute-server";
 export const runtime = "nodejs";
 const headers = { "Cache-Control": "private, no-store" };
 function fail(e: unknown) {
@@ -43,7 +46,9 @@ export async function GET(request: Request) {
       .maybeSingle();
     experienceError(r.error);
     if (!r.data) throw new PilotError("File unavailable.", 404);
-    await participant(user.wallet, r.data.request_id);
+    if (isResolverWallet(user.wallet,getEscrowConfig()?.resolver))
+      await readEvidenceAsResolver(user.wallet,r.data.request_id);
+    else await participant(user.wallet, r.data.request_id);
     const signed = await db.storage
       .from("campuscrew-evidence")
       .createSignedUrl(r.data.object_path, 60, { download: true });
@@ -100,16 +105,14 @@ export async function POST(request: Request) {
     const db = getSupabaseAdmin();
     const escrow = await db
       .from("campuscrew_stellar_escrows")
-      .select("provider,chain_state")
+      .select("organizer,provider,chain_state")
       .eq("request_id", id!)
       .maybeSingle();
     experienceError(escrow.error);
-    if (
-      escrow.data?.provider !== user.wallet ||
-      escrow.data.chain_state !== "Funded"
-    )
+    if (!escrow.data || !((escrow.data.provider === user.wallet && escrow.data.chain_state === "Funded")
+      || ([escrow.data.organizer,escrow.data.provider].includes(user.wallet) && escrow.data.chain_state === "Disputed")))
       throw new PilotError(
-        "Only the selected provider can upload before submitting completion.",
+        "Upload as the selected provider before completion, or as either participant during a dispute.",
         403,
       );
     const evidenceId = randomUUID(),

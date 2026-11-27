@@ -1,7 +1,14 @@
 // Testnet operator action: the independent resolver decides the provider's share.
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { BASE_FEE, Contract, Keypair, Networks, TransactionBuilder, nativeToScVal, rpc, scValToNative } from "@stellar/stellar-sdk";
-import { bookingChainId, bookingLedgerKey, chainBookingSchema, stellarTestnetRpc, usdcUnits } from "../src/features/book-one/stellar-escrow.ts";
+import { bookingChainId, bookingLedgerKey, chainBookingSchema, stellarTestnetRpc, usdcUnits } from "../src/features/book-one/services/stellar-escrow.ts";
+
+if (process.argv.includes("--help")) {
+  console.log("Usage: npm run stellar:resolve -- TASK_UUID PROVIDER_USDC_AMOUNT");
+  console.log("Testnet only. Award 0 for a full refund, or an amount up to the funded deposit for the provider.");
+  console.log("Requires the configured resolver key in .env.stellar-testnet.local. This sends a real Testnet transaction.");
+  process.exit(0);
+}
 
 const [requestId, providerAmount] = process.argv.slice(2);
 if (!requestId || providerAmount === undefined) throw new Error("Usage: npm run stellar:resolve -- TASK_UUID PROVIDER_USDC_AMOUNT (use 0 for a full refund)");

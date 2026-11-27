@@ -9,6 +9,7 @@ import {
 import { MessageCircle, Paperclip, Star, X } from "lucide-react";
 import type { Job } from "./model";
 import type { BookingExperience } from "@/features/book-one/types/experience";
+import { DisputeCasePanel } from "./dispute-case-panel";
 export function BookingExperiencePanel({
   job,
   wallet,
@@ -136,6 +137,7 @@ export function BookingExperiencePanel({
           ["work", "Work & evidence"],
           ["messages", "Messages"],
           ["activity", "Activity"],
+          ["dispute", "Dispute"],
         ].map(([id, label]) => (
           <button
             type="button"
@@ -153,6 +155,7 @@ export function BookingExperiencePanel({
         </p>
       )}
       {notice && <p role="status">{notice}</p>}
+      {tab === "dispute" && <DisputeCasePanel key={job.id} job={job}/>}
       {tab === "work" && (
         <>
           <div className="evidence-heading">
@@ -168,7 +171,8 @@ export function BookingExperiencePanel({
             {job.evidenceRequired
               ? "This task requires a photo or document before completion can be submitted."
               : "Upload evidence when useful or requested. A completion note is still required."}{" "}
-            Only booking participants can access these files.
+            Booking participants can access these files. If a dispute is opened,
+            its authorized resolver can review them too.
           </p>
           {job.completion && (
             <div className="completion-note">

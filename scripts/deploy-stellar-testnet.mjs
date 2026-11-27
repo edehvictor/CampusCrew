@@ -1,7 +1,7 @@
 import { readFile, writeFile, mkdir, access } from "node:fs/promises";
 import { createHash, randomBytes } from "node:crypto";
 import { Address, BASE_FEE, Contract, Keypair, Networks, Operation, TransactionBuilder, rpc, scValToNative } from "@stellar/stellar-sdk";
-import { stellarTestnetRpc, testUsdcContract } from "../src/features/book-one/stellar-escrow.ts";
+import { stellarTestnetRpc, testUsdcContract } from "../src/features/book-one/services/stellar-escrow.ts";
 
 const wasmPath = process.argv[2] ?? "target/verified/campuscrew_escrow.wasm";
 const wasm = await readFile(wasmPath);

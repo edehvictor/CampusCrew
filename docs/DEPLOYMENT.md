@@ -11,6 +11,8 @@ Use a Supabase project for the Testnet pilot. Apply these migrations in order (b
 3. `supabase/migrations/20261123000100_marketplace_experience.sql`
 4. `supabase/migrations/20261123000200_reputation_queries.sql`
 5. `supabase/migrations/20261123000300_refund_notifications.sql`
+6. `supabase/migrations/20261127000100_provider_payout_receipts.sql`
+7. `supabase/migrations/20261127000200_dispute_dashboard.sql`
 
 The older `20261116000100_book_one.sql` belongs to the previous GoodDollar/Celo pilot and is not required to create a fresh Stellar pilot database. Confirm each migration succeeds before proceeding. The service-role key bypasses row-level restrictions and must remain server-side.
 
@@ -30,6 +32,8 @@ Deploy this repository root as a **Next.js** application on a host that runs Nod
 The deployed Testnet contract is `CCS3UK7HCGK5AQIPCJRVNMCR3HWXPD7ZCL7XMWRHGFTG46MTCBAGGZ6S`. Set all three escrow identifiers from the deployment JSON rather than typing them from memory. `npm run stellar:enable` performs on-chain and database checks **locally** and writes to local `.env.local`; it does not update a web host's environment. For a hosted app, verify the same values and set them in the host's dashboard. Never deploy `.env.local`, `SUPABASE_SERVICE_ROLE_KEY`, deployer keys, or resolver secret to the client.
 
 Use the final HTTPS app origin consistently when connecting and signing in. Login challenges are bound to the browser and origin. Verify that the wallet is on **Stellar Testnet**, not Mainnet. Add a public app URL to the root README only after the deployment loads and a two-wallet booking is checked there.
+
+The resolver signs in at `/admin/disputes` using the wallet configured in `STELLAR_ESCROW_RESOLVER`. The web host uses only its public address, never the resolver's private key. Each financial settlement requires a wallet-signed transaction. See [admin setup and testing](ADMIN_DISPUTES.md).
 
 ## 3. Run reconciliation and optional phone push
 

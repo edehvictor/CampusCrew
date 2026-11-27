@@ -33,6 +33,8 @@ Drips Wave uses a persistent navigation column, groups actions by role, and keep
 
 Keep one current status and next action visible. Put wallet technical details and receipts in expandable sections, while showing the review/claim deadline when work is submitted. Work/evidence, messages and activity share a booking workspace. Reviews are dismissible and never gate payout. The account menu stays compact, with View profile and editing controls but no Settings entry. Use precise Testnet labels for ratings and earnings; never award a generic Verified badge for a connected wallet.
 
+Keep the selected person and current payment action above expandable task details. Reached progress markers stay filled during disputes; show a pause instead of resetting to selection. A dispute before submission must not mark work submitted, and a partial settlement must not mark the full payment complete. Applications show price, availability, reputation and proposal first, with services and coverage expandable. The accepted application has a Selected badge and no selection button.
+
 ## Campus discovery and payment history
 
 Keep the wallet/session board in the shared marketplace layout so route changes preserve the account and update stream. Disable the account button during the initial check without adding a loading caption. Merge overlapping background snapshot requests; sign-in, sign-out and mutations request fresh snapshots.

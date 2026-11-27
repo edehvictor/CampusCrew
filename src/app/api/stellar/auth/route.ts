@@ -8,11 +8,13 @@ import {
 } from "@/features/book-one/auth/stellar-auth";
 import { checkStellarDatabase, requireSameOrigin } from "@/features/book-one/auth/stellar-session";
 import { z } from "zod";
+import { getEscrowConfig } from "@/features/book-one/services/stellar-escrow-server";
+import { isResolverWallet } from "@/features/book-one/auth/resolver-access";
 
 export const runtime = "nodejs";
 const headers = { "Cache-Control": "private, no-store" };
 const inputSchema = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("challenge"), wallet: z.string().refine(isStellarWallet) }),
+  z.object({ action: z.literal("challenge"), wallet: z.string().refine(isStellarWallet), scope: z.enum(["marketplace","admin"]).default("marketplace") }),
   z.object({ action: z.literal("signin"), id: z.uuid(), wallet: z.string().refine(isStellarWallet), signature: z.string().max(128) }),
 ]);
 
@@ -36,7 +38,13 @@ export async function POST(request: NextRequest) {
     if (!input.success) throw new PilotError("Check the wallet sign-in details.", 400);
     const db = getSupabaseAdmin();
     if (input.data.action === "challenge") {
+      if (input.data.scope === "admin" && !isResolverWallet(input.data.wallet,getEscrowConfig()?.resolver))
+        throw new PilotError("Choose the configured resolver wallet for admin sign-in.",403);
       const challenge = createSignInChallenge(input.data.wallet, origin);
+      if (input.data.scope === "admin") challenge.message = challenge.message.replace(
+        "Sign in to post tasks, apply for work, and manage your CampusCrew profile.",
+        "Sign in to CampusCrew dispute administration as the configured resolver. Settlement decisions require separate transaction approval.",
+      );
       const previous = request.cookies.get(stellarChallengeCookie)?.value;
       const binding = previous && /^[a-f0-9]{64}$/.test(previous) ? previous : newSessionToken();
       const { error } = await db.rpc("campuscrew_stellar_issue_challenge", {

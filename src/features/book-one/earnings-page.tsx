@@ -298,7 +298,7 @@ export function EarningsPage({ jobs }: { jobs: Job[] }) {
         <footer className="ledger-footer">
           <ShieldCheck size={14} />
           <p>
-            Test funds only. Earnings show completed provider payouts, not your
+            Test funds only. Earnings show confirmed provider payouts, not your
             wallet balance. Each receipt opens on Stellar.
           </p>
         </footer>
@@ -433,7 +433,7 @@ function PaymentReceipt({
         <ExternalLink size={15} />
       </a>
       <Link
-        href={"/me/bookings/" + r.id}
+        href={"/me/bookings/" + (r.bookingId ?? r.id)}
         className="button button-secondary"
         onClick={onClose}
       >

@@ -2,6 +2,7 @@ import type { Job } from "@/features/book-one/model";
 
 export type PaymentRecord = {
   id: string;
+  bookingId?: string;
   title: string;
   category: Job["category"];
   person: string;
@@ -13,7 +14,8 @@ export type PaymentRecord = {
   recordedAt: string | null;
 };
 
-// One financial outcome per booking. Selection alone is never a payment.
+// A split settlement can have a provider payout AND an owner refund.
+// Selection alone is never a payment.
 export function paymentRecords(jobs: Job[]): PaymentRecord[] {
   return jobs
     .flatMap((job) => {
@@ -22,6 +24,7 @@ export function paymentRecords(jobs: Job[]): PaymentRecord[] {
       const provider = !job.own && Boolean(quote.own);
       const base = {
         id: job.id,
+        bookingId: job.id,
         title: job.title,
         category: job.category,
         person: provider ? job.customer : quote.provider,
@@ -29,27 +32,39 @@ export function paymentRecords(jobs: Job[]): PaymentRecord[] {
         provider,
         recordedAt: job.payment?.settledAt ?? null,
       };
+      const outcomes: PaymentRecord[] = [];
+      const payout = job.payment?.providerPayoutAmount;
+      if (["Paid", "Refund available", "Refunded"].includes(job.status)
+        && job.payment?.providerPayoutTx && payout !== undefined
+        && Number.isFinite(payout) && payout > 0 && payout <= quote.amount) {
+        outcomes.push({
+          ...base,
+          id: job.id + ":payout",
+          amount: payout,
+          recordedAt: job.payment.providerPayoutAt ?? null,
+          kind: provider ? "received" : "sent",
+          label: provider ? "Received" : "Paid",
+          receipt: job.payment.providerPayoutTx,
+        });
+      }
+      if (job.own && job.status === "Refunded" && job.payment?.settlementTx
+        && job.payment.refundAmount !== undefined && job.payment.refundAmount > 0) {
+        outcomes.push({
+          ...base,
+          id: job.id + ":refund",
+          amount: job.payment.refundAmount,
+          kind: "refund",
+          label: "Refunded",
+          receipt: job.payment.settlementTx,
+        });
+      }
+      if (outcomes.length) return outcomes;
       if (job.status === "Paid" && job.payment?.settlementTx)
         return [
           {
             ...base,
             kind: provider ? "received" : "sent",
             label: provider ? "Received" : "Paid",
-            receipt: job.payment.settlementTx,
-          } as PaymentRecord,
-        ];
-      if (
-        job.own &&
-        job.status === "Refunded" &&
-        job.payment?.settlementTx &&
-        job.payment.refundAmount !== undefined
-      )
-        return [
-          {
-            ...base,
-            amount: job.payment.refundAmount,
-            kind: "refund",
-            label: "Refunded",
             receipt: job.payment.settlementTx,
           } as PaymentRecord,
         ];

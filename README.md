@@ -67,6 +67,7 @@ The database is the marketplace record; the contract is the authority for money.
 | `/me/applications` | Applications you sent |
 | `/me/bookings`, `/me/bookings/:id` | Your bookings and their payment/work history |
 | `/me/earnings`, `/me/notifications`, `/me/profile` | Earnings, alerts, and profile |
+| `/admin/disputes` | Resolver wallet login, private case review, and wallet-signed settlement decisions |
 
 Personal data and booking actions are checked against the signed wallet session on the server.
 
@@ -85,6 +86,10 @@ Set `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `.env.local`. 
 To use the **existing verified Testnet escrow**, fill `STELLAR_ESCROW_CONTRACT`, `STELLAR_ESCROW_WASM_HASH`, and `STELLAR_ESCROW_RESOLVER` from [`deployments/stellar-testnet.json`](deployments/stellar-testnet.json), then run `npm.cmd run stellar:enable`. This checks the deployment and required payment tables before setting `STELLAR_ESCROW_ENABLED=true` locally. Wallets need test XLM for fees and Circle-issued **test USDC** for funding; the profile dialog provides wallet setup controls.
 
 Use two browser profiles to test the owner/provider journey. Post a test task, apply from the other wallet, select the provider, create and accept escrow, fund, submit work, and approve payout. Check the funding and payout receipts in both accounts. For a pilot dispute, the configured resolver can run `npm.cmd run stellar:resolve -- TASK_UUID PROVIDER_USDC_AMOUNT`; the decision is manual and should be documented. The resolver key never belongs in the web app's environment.
+
+For a guided countdown, dispute, split award, and refund test, follow [the two-wallet walkthrough](docs/DISPUTE_TEST.md).
+
+The [resolution desk guide](docs/ADMIN_DISPUTES.md) explains dedicated admin sign-in, case statements and evidence, and settling disputes through the dashboard.
 
 ## Checks
 

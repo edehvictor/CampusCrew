@@ -6,6 +6,7 @@ import {
   StrKey,
   rpc,
   scValToNative,
+  nativeToScVal,
 } from "@stellar/stellar-sdk";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { PilotError } from "@/features/book-one/pilot-error";
@@ -25,6 +26,8 @@ import {
 } from "@/features/book-one/services/stellar-escrow";
 import type { Job } from "@/features/book-one/model";
 import { readWalletBalance } from "@/features/book-one/services/stellar-balance";
+import { reconcilePayments } from "./reconcile-payments";
+import { verifyProviderPayout } from "./provider-payout";
 
 type EscrowRow = EscrowTerms & {
   chain_state: string | null;
@@ -34,6 +37,9 @@ type EscrowRow = EscrowTerms & {
   settlement_tx: string | null;
   settled_at?: string | null;
   completion_note: string | null;
+  provider_payout_tx?: string | null;
+  provider_payout_amount?: number | null;
+  provider_payout_at?: string | null;
 };
 type PaymentIntent = {
   id: string;
@@ -123,7 +129,7 @@ async function termsFor(
   return data as EscrowRow;
 }
 
-async function chainSnapshot(terms: EscrowTerms) {
+export async function chainSnapshot(terms: EscrowTerms) {
   const config = configured();
   const client = server();
   const instanceKey = new Contract(config.contract).getFootprint();
@@ -248,6 +254,7 @@ export async function syncEscrow(wallet: string, requestId: string) {
     } else pending = true;
   }
   await recordSnapshot(terms, snapshot);
+  await rememberProviderPayout(terms, snapshot);
   return {
     pending,
     message: pending
@@ -256,6 +263,52 @@ export async function syncEscrow(wallet: string, requestId: string) {
         ? "The transaction did not complete. Booking state has been checked; you can retry the available action."
         : "Booking confirmed against Stellar Testnet.",
   };
+}
+
+async function rememberProviderPayout(
+  terms: EscrowRow,
+  snapshot: { booking: ChainBooking | null; ledger: number },
+) {
+  const booking = snapshot.booking;
+  if (!booking || terms.provider_payout_tx
+    || !["Paid", "Refundable"].includes(booking.state[0])
+    || booking.funded <= booking.refund_pool) return;
+  const db = getSupabaseAdmin();
+  const stored = await db.from("campuscrew_stellar_escrows")
+    .select("provider_payout_tx,settlement_tx").eq("request_id", terms.request_id).single();
+  // Keep the existing app usable while the payout-receipt migration is applied.
+  if (stored.error && ["42703", "PGRST204"].includes(stored.error.code)) return;
+  database(stored.error);
+  if (stored.data?.provider_payout_tx) return;
+  const client = server();
+  const candidates = new Set<string>();
+  if (stored.data?.settlement_tx) candidates.add(stored.data.settlement_tx);
+  async function record(hash: string) {
+    const result = await client.getTransaction(hash);
+    const payout = verifyProviderPayout(terms, booking!, hash, result);
+    if (!payout) return false;
+    const saved = await db.rpc("campuscrew_stellar_record_provider_payout", {
+      p_request_id: terms.request_id, p_hash: payout.hash,
+      p_amount: payout.amount, p_at: payout.at,
+    });
+    database(saved.error);
+    return true;
+  }
+  for (const hash of candidates) if (await record(hash)) return;
+  // Resolver calls do not create app intents. Find the contract's booking-bound
+  // events, then verify each candidate's exact invocation and token transfer.
+  const events = await client.getEvents({
+    startLedger: Math.max(1, snapshot.ledger - 100_000),
+    filters: [{ type: "contract", contractIds: [terms.contract_id], topics: [[
+      nativeToScVal("changed", { type: "symbol" }).toXDR("base64"),
+      nativeToScVal(Buffer.from(terms.chain_id, "hex")).toXDR("base64"),
+    ]] }], limit: 100,
+  });
+  for (const event of events.events) {
+    if (!event.txHash || candidates.has(event.txHash)) continue;
+    candidates.add(event.txHash);
+    if (await record(event.txHash)) return;
+  }
 }
 
 export async function prepareEscrow(
@@ -523,6 +576,9 @@ export async function enrichEscrowJobs(
         fundingTx: row.funding_tx,
         settlementTx: row.settlement_tx,
         settledAt: row.settled_at ?? null,
+        providerPayoutTx: row.provider_payout_tx ?? null,
+        providerPayoutAmount: row.provider_payout_amount ?? undefined,
+        providerPayoutAt: row.provider_payout_at ?? null,
         refundAmount: chain ? Number(chain.refund_pool) / 10_000_000 : undefined,
         refundAfter: null,
         state: state ?? "Uncreated",
@@ -565,27 +621,28 @@ export async function reconcilePending(wallet?: string) {
       own.data.map((row) => row.request_id),
     );
   }
-  const result = await query;
-  database(result.error);
-  const unique = new Map(
-    (result.data ?? []).map((row) => [row.request_id, row.wallet]),
-  );
-  // The worker also observes external resolver decisions, which have no app intent.
-  if (!wallet) {
-    const active = await db
+  const completed = await reconcilePayments({
+    pending: async () => {
+      const result = await query;
+      database(result.error);
+      return (result.data ?? []).map((row) => ({ requestId: row.request_id, wallet: row.wallet }));
+    },
+    active: async () => {
+      let activeQuery = db
       .from("campuscrew_stellar_escrows")
       .select("request_id,organizer")
-      .in("chain_state", ["Proposed", "Funding", "Funded", "Submitted", "Disputed"])
+      .in("chain_state", ["Proposed", "Funding", "Funded", "Submitted", "Disputed", "Refundable"])
       .order("checked_ledger")
       .limit(8);
-    database(active.error);
-    for (const booking of active.data ?? [])
-      if (!unique.has(booking.request_id)) unique.set(booking.request_id, booking.organizer);
-  }
-  const results = await Promise.allSettled(
-    [...unique].map(([id, actor]) => syncEscrow(actor, id)),
-  );
-  if (results.some((result) => result.status === "rejected"))
+      // A browser can observe only bookings in which its signed wallet participates.
+      if (wallet) activeQuery = activeQuery.or("organizer.eq." + wallet + ",provider.eq." + wallet);
+      const active = await activeQuery;
+      database(active.error);
+      return (active.data ?? []).map((row) => ({ requestId: row.request_id, wallet: wallet ?? row.organizer }));
+    },
+    sync: syncEscrow,
+  });
+  if (!completed)
     throw new PilotError(
       "Payment confirmation is delayed. Your booking will retry automatically.",
       503,

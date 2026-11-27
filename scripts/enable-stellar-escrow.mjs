@@ -1,7 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { createClient } from "@supabase/supabase-js";
 import { Contract, Networks, rpc } from "@stellar/stellar-sdk";
-import { stellarTestnetRpc } from "../src/features/book-one/stellar-escrow.ts";
+import { stellarTestnetRpc } from "../src/features/book-one/services/stellar-escrow.ts";
 
 process.loadEnvFile(".env.local");
 const deployment = JSON.parse(await readFile("deployments/stellar-testnet.json", "utf8"));

@@ -1,0 +1,49 @@
+.dispute-case-panel {
+  display: grid;
+  gap: 16px;
+  padding: 18px 0;
+}
+.dispute-case-panel h4 {
+  margin: 0;
+}
+.dispute-case-panel article {
+  border: 1px solid var(--line);
+  padding: 15px;
+  border-radius: 10px;
+}
+.dispute-case-panel article p {
+  margin: 8px 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.dispute-case-panel form {
+  display: grid;
+  gap: 12px;
+}
+.dispute-case-panel label {
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 650;
+}
+.dispute-case-panel textarea {
+  width: 100%;
+  border: 1px solid var(--control-line);
+  padding: 12px;
+  border-radius: 9px;
+  resize: vertical;
+}
+.request-dialog form label:has([name="reason"]),
+.request-dialog form label:has([name="summary"]) {
+  display: grid;
+  gap: 8px;
+}
+.request-dialog [name="reason"],
+.request-dialog [name="summary"] {
+  width: 100%;
+  border: 1px solid var(--control-line);
+  padding: 12px;
+  border-radius: 9px;
+  background: var(--surface);
+  resize: vertical;
+}

@@ -3,7 +3,7 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import assert from "node:assert/strict";
 import { BASE_FEE, Keypair, Networks, TransactionBuilder, rpc, scValToNative } from "@stellar/stellar-sdk";
-import { assertBookingTerms, bookingChainId, bookingLedgerKey, escrowCall, stellarTestnetRpc, testUsdcContract } from "../src/features/book-one/stellar-escrow.ts";
+import { assertBookingTerms, bookingChainId, bookingLedgerKey, escrowCall, stellarTestnetRpc, testUsdcContract } from "../src/features/book-one/services/stellar-escrow.ts";
 
 const deployment = JSON.parse(await readFile("deployments/stellar-testnet.json", "utf8"));
 if (!deployment.verified || deployment.network !== "stellar-testnet") throw new Error("A verified Testnet deployment is required.");

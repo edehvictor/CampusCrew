@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { reconcilePending } from "@/features/book-one/services/stellar-escrow-server";
 import { sendPendingPush } from "@/features/book-one/services/push-server";
+import { reconcileDecisions } from "@/features/book-one/services/dispute-resolution-server";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 export async function POST(request: Request) {
@@ -17,6 +18,7 @@ export async function POST(request: Request) {
   let delayed = false;
   try {
     await reconcilePending();
+    await reconcileDecisions();
   } catch {
     delayed = true;
   }

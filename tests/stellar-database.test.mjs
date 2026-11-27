@@ -16,6 +16,7 @@ before(async () => {
   const sql = await readFile(new URL("../supabase/migrations/20261119000100_stellar_onboarding.sql", import.meta.url), "utf8");
   await db.exec(sql);
   await db.exec(await readFile(new URL("../supabase/migrations/20261121000100_stellar_escrow.sql", import.meta.url), "utf8"));
+  await db.exec(await readFile(new URL("../supabase/migrations/20261127000100_provider_payout_receipts.sql", import.meta.url), "utf8"));
 });
 
 beforeEach(async () => {
@@ -152,4 +153,23 @@ test("browser roles cannot read payment intents or overwrite escrow snapshots", 
     await assert.rejects(db.query("select campuscrew_stellar_record_escrow($1,999,'Paid','{}')", [taskId]), /permission denied/);
     await assert.rejects(db.query('select * from campuscrew_stellar_escrows'), /permission denied/);
   } finally { await db.exec('reset role'); }
+});
+
+test("provider awards preserve a separate immutable receipt and reject amounts inconsistent with the chain snapshot", async () => {
+  await escrow();
+  const chain = JSON.stringify({funded:"102500000",refund_pool:"42500000"});
+  await db.query("select campuscrew_stellar_record_escrow($1,50,'Refundable',$2)",[taskId,chain]);
+  const hash="ac".repeat(32),at="2026-11-27T15:03:49Z";
+  await assert.rejects(db.query("select campuscrew_stellar_record_provider_payout($1,$2,10.25,$3)",[taskId,hash,at]),/does not match/);
+  await db.query("select campuscrew_stellar_record_provider_payout($1,$2,6,$3)",[taskId,hash,at]);
+  await db.query("select campuscrew_stellar_record_provider_payout($1,$2,6,$3)",[taskId,hash,at]);
+  await assert.rejects(db.query("select campuscrew_stellar_record_provider_payout($1,$2,6,$3)",[taskId,"ab".repeat(32),at]),/different provider payout/);
+  const row=(await db.query("select provider_payout_tx,provider_payout_amount,settlement_tx from campuscrew_stellar_escrows where request_id=$1",[taskId])).rows[0];
+  assert.equal(row.provider_payout_tx,hash);
+  assert.equal(Number(row.provider_payout_amount),6);
+  assert.equal(row.settlement_tx,null);
+  await db.exec("set role anon");
+  try {
+    await assert.rejects(db.query("select campuscrew_stellar_record_provider_payout($1,$2,6,$3)",[taskId,hash,at]),/permission denied/);
+  } finally {await db.exec("reset role");}
 });

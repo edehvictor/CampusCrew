@@ -268,6 +268,41 @@
 .payment-note svg { flex: 0 0 auto; color: var(--brand); }
 .empty-message { padding: 14px 15px; color: var(--muted); font-size: 13px; }
 .request-next .empty-message { padding: 8px 0 0; }
+.booking-person { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.booking-person > div { display: grid; min-width: 0; gap: 4px; }
+.booking-person-label { color: var(--muted); font-size: 11px; }
+.booking-person a, .booking-person strong { color: var(--ink); font-size: 14px; font-weight: 750; overflow-wrap: anywhere; }
+.booking-person a:hover { text-decoration: underline; }
+.application-selected { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 4px; padding: 5px 9px; color: #206144; background: #e6f4ec; border-radius: 20px; font-size: 11px; font-weight: 700; }
+.task-scope-details { margin-top: 20px; padding-block: 16px; border-block: 1px solid var(--line); }
+.task-scope-details > summary { display: flex; align-items: center; gap: 8px; list-style: none; cursor: pointer; font-size: 13px; font-weight: 700; }
+.task-scope-details > summary::-webkit-details-marker { display: none; }
+.task-scope-details > summary svg:last-child { margin-left: auto; }
+.task-scope-details[open] > summary svg:last-child { transform: rotate(180deg); }
+.task-scope-details > p:first-of-type { margin-top: 14px; }
+.task-scope-details + .request-next { margin-top: 0; border-top: 0; }
+.booking-workspace { margin-top: 20px; }
+.accepted-application > summary, .application-background > summary { color: var(--primary-ink); cursor: pointer; font-size: 12px; }
+.application-card { display: grid; gap: 12px; margin-top: 14px; padding: 18px; border: 1px solid var(--line); border-radius: 12px; min-width: 0; }
+.application-card[data-selected="true"] { border-color: var(--brand); box-shadow: inset 3px 0 0 var(--brand); }
+.application-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.application-card-header > div { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+.application-name { font-size: 14px; font-weight: 750; color: var(--ink); overflow-wrap: anywhere; }
+a.application-name:hover { text-decoration: underline; }
+.application-price { font-size: 16px; white-space: nowrap; color: var(--primary-ink); }
+.application-availability { display: flex; align-items: flex-start; gap: 6px; margin: 0; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.application-availability svg { flex: 0 0 auto; margin-top: 2px; }
+.application-card .application-message { margin: 0; color: var(--ink); line-height: 1.7; }
+.application-card .reputation-line { margin: 0; }
+.application-background p { color: var(--muted); font-size: 12px; margin-top: 8px; overflow-wrap: anywhere; white-space: pre-wrap; }
+.application-card-footer { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; border-top: 1px solid var(--line); padding-top: 12px; }
+.application-card-footer .button { margin-left: auto; min-height: 38px; font-size: 12px; }
+@media (max-width: 600px) {
+  .application-card { padding: 14px; }
+  .application-card-header { flex-wrap: wrap; }
+  .application-card-footer .button { width: 100%; margin-left: 0; }
+  .booking-person { align-items: flex-start; flex-wrap: wrap; }
+}
 .request-detail-empty { display: grid; align-content: center; justify-items: center; gap: 9px; padding: 25px; color: var(--muted); }
 .request-detail-empty svg { color: var(--brand); }
 .back-button { display: none; }

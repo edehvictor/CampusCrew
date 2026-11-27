@@ -1,6 +1,8 @@
 import { createHash } from "node:crypto";
 import { Account, Address, Asset, BASE_FEE, Contract, Keypair, Networks, StrKey, Transaction, TransactionBuilder, nativeToScVal, xdr } from "@stellar/stellar-sdk";
 import { z } from "zod";
+import { usdcUnits } from "./usdc-units.ts";
+export { usdcUnits } from "./usdc-units.ts";
 
 export const escrowOperations = ["create", "accept", "fund", "submit", "release", "claim", "cancel", "refund", "dispute"] as const;
 export type EscrowOperation = typeof escrowOperations[number];
@@ -31,14 +33,6 @@ export type ChainBooking = z.infer<typeof chainBookingSchema>;
 export function bookingChainId(requestId: string) {
   if (!z.uuid().safeParse(requestId).success) throw new Error("Invalid booking ID.");
   return createHash("sha256").update(`campuscrew:stellar-testnet:${requestId}`).digest("hex");
-}
-
-export function usdcUnits(value: string): bigint {
-  if (!/^\d+(\.\d{1,7})?$/.test(value)) throw new Error("Invalid USDC amount.");
-  const [whole, decimals = ""] = value.split(".");
-  const amount = BigInt(whole) * BigInt(10_000_000) + BigInt(decimals.padEnd(7, "0"));
-  if (amount <= BigInt(0) || amount > BigInt(10_000_000_000_000)) throw new Error("USDC amount is out of range.");
-  return amount;
 }
 
 export function assertBookingTerms(terms: EscrowTerms, value: unknown): ChainBooking {

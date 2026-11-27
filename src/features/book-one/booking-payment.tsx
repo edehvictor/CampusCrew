@@ -1,12 +1,9 @@
-import {
-  Banknote,
-  CheckCircle2,
-  Clock3,
-  ShieldCheck,
-  Wallet,
-} from "lucide-react";
+import { Banknote, CheckCircle2, ShieldCheck, Wallet } from "lucide-react";
 import type { Job } from "./model";
 import type { PaymentOperation } from "@/features/book-one/types/pilot";
+import { BookingReviewCountdown } from "./booking-review-countdown";
+import { DisputeReportButton } from "./dispute-report";
+import { bookingProgress } from "./services/booking-progress";
 type Props = {
   job: Job;
   busy: boolean;
@@ -35,23 +32,18 @@ export function BookingPayment({
   const operations = job.payment?.operations ?? [],
     settled = ["Paid", "Refunded", "Cancelled"].includes(job.status),
     state = job.payment?.state;
-  const index =
-    state === "Paid"
-      ? 4
-      : state === "Submitted"
-        ? 3
-        : state === "Funded"
-          ? 2
-          : state === "Funding"
-            ? 1
-            : 0;
+  const stage = bookingProgress(job);
   const instructions =
     job.status === "Cancelled"
       ? "Booking cancelled. No payment is due."
       : job.status === "Refunded"
-        ? "Your contribution has been returned."
+        ? job.own
+          ? "Your refundable contribution has been returned."
+          : "The task owner's refundable contribution has been returned."
         : job.status === "Refund available"
-          ? "A refund is available. Reclaim your contribution below."
+          ? job.own
+            ? "A refund is available. Reclaim your contribution below."
+            : "Settlement decided. The remaining contribution is refundable to the task owner."
           : job.status === "Paid"
             ? "Payment released. This booking is complete."
             : job.status === "Disputed"
@@ -81,89 +73,123 @@ export function BookingPayment({
       )
     )
       return;
-    if (
-      operation === "dispute" &&
-      !window.confirm(
-        "Open a dispute? Payout pauses until the resolver decides how to split the funds.",
-      )
-    )
-      return;
     submit(operation);
   }
   return (
-    <div className="booking-payment-panel">
+    <section
+      className="booking-payment-panel"
+      data-paused={stage.paused}
+      aria-label="Booking status and payment"
+    >
       <div className="payment-status">
         <ShieldCheck size={19} />
-        <strong>
-          {job.status === "Cancelled"
-            ? "Booking cancelled"
-            : job.status === "Refunded"
-              ? "Contribution refunded"
-              : job.status === "Refund available"
-                ? "Refund available"
-                : job.status === "Paid"
-                  ? "Payment sent"
-                  : ["Funded", "Ready for review", "Disputed"].includes(
-                        job.status,
-                      )
-                    ? "Payment secured"
-                    : "Payment not yet secured"}
-        </strong>
-        <small>Test USDC / Stellar Testnet</small>
+        <strong>{stage.title}</strong>
+        <small>Test USDC · Stellar Testnet</small>
       </div>
       <ol className="booking-progress" aria-label="Booking progress">
         {progress.map((label, i) => (
-          <li key={label} data-done={i <= index}>
-            {i < index ? <CheckCircle2 size={14} /> : <span>{i + 1}</span>}
-            {label}
+          <li
+            key={label}
+            data-done={i <= stage.lastReached}
+            aria-current={i === stage.current ? "step" : undefined}
+          >
+            <span className="progress-marker" aria-hidden="true">
+              {i <= stage.lastReached ? <CheckCircle2 size={16} /> : i + 1}
+            </span>
+            <span className="progress-label">
+              {label}
+              <span className="sr-only">
+                {i <= stage.lastReached ? " — reached" : " — not reached"}
+              </span>
+            </span>
           </li>
         ))}
       </ol>
-      <p className="booking-next-action">{instructions}</p>
-      {state === "Submitted" && job.payment?.reviewDeadline ? (
-        <p className="review-deadline">
-          <Clock3 size={14} />
-          The provider can claim payment from{" "}
-          {new Date(job.payment.reviewDeadline * 1000).toLocaleString()} unless
-          a dispute is opened.
-        </p>
-      ) : null}
+      <div className="booking-action-focus">
+        <p className="booking-next-action">{instructions}</p>
+        {state === "Submitted" && (
+          <BookingReviewCountdown
+            state={state}
+            deadline={job.payment?.reviewDeadline}
+            owner={Boolean(job.own)}
+          />
+        )}
+        <div className="booking-actions">
+          {enabled &&
+            operations.map((operation) =>
+              operation === "dispute" ? (
+                <DisputeReportButton
+                  key={operation}
+                  id={job.id}
+                  disabled={busy}
+                  onPause={() => submit("dispute")}
+                />
+              ) : operation === "submit" ? (
+                <button
+                  key={operation}
+                  className="button button-primary"
+                  disabled={busy}
+                  onClick={onComplete}
+                >
+                  Submit completion
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  key={operation}
+                  className={
+                    "button " +
+                    (["cancel", "dispute"].includes(operation)
+                      ? "button-secondary"
+                      : "button-primary")
+                  }
+                  disabled={busy}
+                  onClick={() => act(operation)}
+                >
+                  {operation === "fund" ? (
+                    <Wallet size={16} />
+                  ) : operation === "release" ? (
+                    <Banknote size={16} />
+                  ) : null}
+                  {labels[operation]}
+                </button>
+              ),
+            )}
+        </div>
+        {!enabled && !settled && (
+          <p role="status">
+            Testnet payment controls are not configured on this deployment.
+          </p>
+        )}
+      </div>
       {enabled && !settled && (
         <details className="payment-terms">
-          <summary>
-            Payment terms & deadlines / review before accepting or funding
-          </summary>
+          <summary>Payment terms & deadlines</summary>
           <p>
-            Each on-chain action needs your wallet approval and test XLM for
-            fees. The agreed payment is held in escrow until released or
-            resolved.
+            Wallet approvals use test XLM for network fees. Accepting the terms
+            does not transfer USDC. Funding locks the agreed payment in escrow.
           </p>
           {job.payment?.fundingDeadline && (
             <p>
               Fund by{" "}
               {new Date(job.payment.fundingDeadline * 1000).toLocaleString()}.
+            </p>
+          )}
+          {job.payment?.workDeadline && (
+            <p>
               Complete by{" "}
-              {new Date(job.payment.workDeadline! * 1000).toLocaleString()}.
+              {new Date(job.payment.workDeadline * 1000).toLocaleString()}.
             </p>
           )}
           <p>
-            The task owner approves completion. After submission, the provider
-            can claim payment after two days unless a dispute is opened.
+            The owner can approve payment as soon as work is submitted. After
+            two days, the provider can claim unless a dispute is opened.
+            Claiming requires a wallet approval.
           </p>
-          {job.payment?.reviewDeadline ? (
-            <p>
-              <Clock3 size={14} />
-              The provider can claim from{" "}
-              {new Date(
-                job.payment.reviewDeadline * 1000,
-              ).toLocaleString()}{" "}
-              unless disputed.
-            </p>
-          ) : null}
           <p>
-            A dispute pauses payout. The named resolver can award all, part or
-            none of the deposit to the provider. The remainder becomes
-            refundable.
+            A dispute pauses payout. The resolver reviews booking messages and
+            evidence, then awards all, part or none of the deposit. The
+            remainder is refundable. Confirmed settlements are final on-chain.
           </p>
           {job.payment?.resolver && (
             <a
@@ -179,48 +205,8 @@ export function BookingPayment({
           )}
         </details>
       )}
-      <div className="booking-actions">
-        {enabled &&
-          operations.map((operation) =>
-            operation === "submit" ? (
-              <button
-                key={operation}
-                className="button button-primary"
-                disabled={busy}
-                onClick={onComplete}
-              >
-                Submit completion
-              </button>
-            ) : (
-              <button
-                type="button"
-                key={operation}
-                className={
-                  "button " +
-                  (["cancel", "dispute"].includes(operation)
-                    ? "button-secondary"
-                    : "button-primary")
-                }
-                disabled={busy}
-                onClick={() => act(operation)}
-              >
-                {operation === "fund" ? (
-                  <Wallet size={16} />
-                ) : operation === "release" ? (
-                  <Banknote size={16} />
-                ) : null}
-                {labels[operation]}
-              </button>
-            ),
-          )}
-      </div>
-      {!enabled && !settled && (
-        <p role="status">
-          Testnet payment controls are not configured on this deployment.
-        </p>
-      )}
       <details className="payment-receipts">
-        <summary>Receipts & payment help</summary>
+        <summary>Receipts & transaction details</summary>
         <p>
           Booking updates are checked automatically. If your connection was
           interrupted, you can check again here.
@@ -273,6 +259,6 @@ export function BookingPayment({
           )}
         </div>
       </details>
-    </div>
+    </section>
   );
 }

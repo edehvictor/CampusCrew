@@ -74,6 +74,45 @@ test("a refund uses the actual refundable amount rather than the full booking pr
   assert.equal(records[0].amount, 0.35);
   assert.deepEqual(paymentRecords([{ ...base, status: "Refunded" }]), []);
 });
+
+test("provider earnings include the verified award after a split settlement and owner refund", () => {
+  const job = {
+    ...base, status: "Refunded", own: false,
+    quotes: [{ ...base.quotes[0], own: true }],
+    payment: { ...base.payment, providerPayoutTx: "c".repeat(64), providerPayoutAmount: 0.6,
+      providerPayoutAt: "2026-11-27T15:03:49Z", refundAmount: 0.65 },
+  };
+  const records = paymentRecords([job]);
+  assert.equal(records.length, 1);
+  assert.equal(records[0].kind, "received");
+  assert.equal(records[0].amount, 0.6);
+  assert.equal(records[0].receipt, "c".repeat(64));
+  assert.equal(records[0].bookingId, base.id);
+  assert.equal(records[0].recordedAt, job.payment.providerPayoutAt);
+  assert.equal(paymentTotal(records), 0.6);
+  const awaitingRefund = paymentRecords([{ ...job, status: "Refund available" }]);
+  assert.equal(awaitingRefund[0].amount, 0.6);
+});
+
+test("owner sees the provider award and refund separately with distinct receipts and IDs", () => {
+  const records = paymentRecords([{
+    ...base, status: "Refunded",
+    payment: { ...base.payment, providerPayoutTx: "c".repeat(64), providerPayoutAmount: 0.6, refundAmount: 0.65 },
+  }]);
+  assert.equal(records.length, 2);
+  assert.deepEqual(records.map(r => [r.kind,r.amount,r.receipt]).sort((a,b)=>String(a[0]).localeCompare(String(b[0]))), [
+    ["refund",0.65,base.payment.settlementTx], ["sent",0.6,"c".repeat(64)],
+  ]);
+  assert.notEqual(records[0].id, records[1].id);
+  assert.equal(records[0].bookingId, records[1].bookingId);
+});
+
+test("a full-refund booking creates no provider income and a receiptless award is not earnings", () => {
+  const job = { ...base, status: "Refunded", own:false, quotes:[{...base.quotes[0],own:true}],
+    payment: { ...base.payment, refundAmount:1.25, providerPayoutAmount:0 } };
+  assert.deepEqual(paymentRecords([job]), []);
+  assert.deepEqual(paymentRecords([{...job,payment:{...job.payment,providerPayoutAmount:0.6}}]), []);
+});
 test("payment totals preserve USDC precision and CSV export neutralizes spreadsheet formulas", () => {
   assert.equal(
     paymentTotal([{ amount: 0.1 }, { amount: 0.2 }, { amount: 0.0000001 }]),
