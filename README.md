@@ -26,18 +26,11 @@ The app currently prepares **individual bookings**. The contract supports multip
 
 A wallet signature proves control of an address. It does **not** verify student status, provider skills, or a unique human. Reviews and earnings shown today are Testnet pilot data.
 
-## Deployment and proof
+## Deployment
 
-**Escrow contract: deployed on Stellar Testnet.** The address, token, resolver, Wasm hash, and deployment transactions are recorded in [`deployments/stellar-testnet.json`](deployments/stellar-testnet.json).
+CampusCrew has a Next.js web app, a Supabase database, and a Soroban escrow contract on Stellar Testnet. Deploy the web app to a Node.js host, apply the database migrations, and configure the host with the Supabase credentials and the contract details in [`deployments/stellar-testnet.json`](deployments/stellar-testnet.json). Run the reconciliation worker separately so payment updates and optional notifications continue when browsers are closed.
 
-| Proof | Link |
-| --- | --- |
-| Soroban escrow | [View contract](https://stellar.expert/explorer/testnet/contract/CCS3UK7HCGK5AQIPCJRVNMCR3HWXPD7ZCL7XMWRHGFTG46MTCBAGGZ6S) |
-| 1 test USDC funded | [Funding transaction](https://stellar.expert/explorer/testnet/tx/127164d5b785359ff2e80885f659ad4822853dffeb9abf2419f8bb94fe0a6555) |
-| 1 test USDC paid out | [Payout transaction](https://stellar.expert/explorer/testnet/tx/843728aa2d6afd88df7fa02477f363c45d191d08aad35932afbc8393a400c05a) |
-| Contract checks | [CI run: 14 Rust tests, Clippy, release Wasm](https://github.com/edehvictor/CampusCrew/actions/runs/44843634439) |
-
-**Web app: no verified public deployment URL is recorded here yet.** The source runs locally; deploying the Next.js app is separate from deploying its Soroban contract. See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for the web host, environment variables, database migrations, worker, and release checks.
+Follow the [deployment guide](docs/DEPLOYMENT.md) for the environment variables, release checks, and Testnet booking walkthrough.
 
 ## Stack
 
@@ -94,5 +87,3 @@ npm.cmd run build
 Contract checks run from the repository root with `cargo fmt --check`, `cargo test --locked`, `cargo clippy --locked --all-targets -- -D warnings`, and `cargo build --locked --target wasm32v1-none --release`. Test fixtures live in `tests/fixtures`; the live app does not load sample tasks. The optional `stellar:smoke` script creates, accepts, and cancels an **unfunded** Testnet booking and is not a paid-booking test.
 
 More detail: [deployment guide](docs/DEPLOYMENT.md) · [architecture](ARCHITECTURE.md) · [roadmap](ROADMAP.md) · [design system](DESIGN.md) · [contract rules](contracts/escrow/README.md).
-
-Based on the [Chucks1093 Next.js server template](https://github.com/Chucks1093/templates/tree/main/nextjs-server-template).
