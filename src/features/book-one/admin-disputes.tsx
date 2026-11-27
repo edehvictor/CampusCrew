@@ -4,20 +4,16 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
   ArrowLeft,
-  ArrowRight,
-  Check,
-  Copy,
   ExternalLink,
   FileText,
-  LockKeyhole,
   LogOut,
   RefreshCw,
   Scale,
   Search,
   ShieldCheck,
-  Wallet,
   X,
 } from "lucide-react";
+import { AdminLogin } from "./admin-login";
 import { useResolverSession } from "./hooks/use-resolver-session";
 import { clientApi } from "./services/client-api";
 import { awardUnits } from "./services/dispute-amount";
@@ -59,7 +55,6 @@ export function AdminDisputes() {
     [search, setSearch] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
-    [copied, setCopied] = useState(false),
     [notice, setNotice] = useState("");
   const working = useRef(false);
   async function load() {
@@ -162,108 +157,7 @@ export function AdminDisputes() {
         </nav>
       </header>
       {!allowed ? (
-        <section className="admin-login">
-          <div className="admin-login-mark">
-            <LockKeyhole size={30} />
-          </div>
-          <p className="admin-eyebrow">CampusCrew administration</p>
-          <h1>
-            Hear both sides.
-            <br />
-            <em>Make a fair call.</em>
-          </h1>
-          <p>
-            Sign in with the configured resolver wallet to review private
-            dispute cases and approve settlements.
-          </p>
-          {auth.session?.resolver ? (
-            <div className="admin-wallet">
-              <span>Authorized resolver · Stellar Testnet</span>
-              <code>{auth.session.resolver}</code>
-              <button
-                type="button"
-                className="text-button"
-                onClick={() => {
-                  void navigator.clipboard
-                    .writeText(auth.session!.resolver!)
-                    .then(() => setCopied(true))
-                    .catch(() => setCopied(false));
-                }}
-              >
-                {copied ? <Check size={14} /> : <Copy size={14} />}{" "}
-                {copied ? "Copied" : "Copy address"}
-              </button>
-            </div>
-          ) : (
-            <p>Checking admin configuration…</p>
-          )}
-          {auth.session?.wallet && (
-            <p>
-              Current session: {short(auth.session.wallet)}. This wallet does
-              not have resolver access.
-            </p>
-          )}
-          {auth.connected && (
-            <p role="status">
-              Connected: {short(auth.connected)}.{" "}
-              {auth.connected === auth.session?.resolver
-                ? "Resolver account selected. Continue with Sign in securely to approve the login message."
-                : "Select the authorized resolver account inside your extension, then reconnect."}
-            </p>
-          )}
-          {auth.error && (
-            <p className="admin-error" role="alert">
-              {auth.error}
-            </p>
-          )}
-          <div className="admin-login-actions">
-            <button
-              className="button button-primary"
-              disabled={auth.busy || !auth.session?.resolver}
-              onClick={() => void auth.connect()}
-            >
-              <Wallet size={16} />{" "}
-              {auth.phase === "connect"
-                ? "Connecting…"
-                : auth.connected
-                  ? "Reconnect Varial"
-                  : "Connect Varial"}
-            </button>
-            <button
-              type="button"
-              className="button button-secondary"
-              disabled={auth.busy || !auth.session?.resolver}
-              onClick={() => void auth.chooseWallet()}
-            >
-              Choose another wallet
-            </button>
-            {auth.connected && (
-              <button
-                className="button button-secondary"
-                disabled={
-                  auth.busy || auth.connected !== auth.session?.resolver
-                }
-                onClick={() => void auth.signIn()}
-              >
-                {auth.phase === "signin"
-                  ? "Waiting for wallet approval…"
-                  : "Sign in securely"}{" "}
-                <ArrowRight size={16} />
-              </button>
-            )}
-          </div>
-          <p className="admin-connect-hint">
-            Connection reads your selected account. If Varial already has
-            permission, it may not open a popup until you choose Sign in
-            securely. Make sure the extension is installed in this same browser
-            profile.
-          </p>
-          <small>
-            Use a separate browser profile for administration. Sign-in proves
-            wallet ownership; every settlement needs a separate transaction
-            approval. Never enter a private key on this page.
-          </small>
-        </section>
+        <AdminLogin auth={auth} />
       ) : (
         <>
           <section className="admin-intro">

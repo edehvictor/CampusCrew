@@ -17,8 +17,11 @@ export function useResolverSession() {
   const [session, setSession] = useState<Session | null>(null),
     [connected, setConnected] = useState<string>(),
     [busy, setBusy] = useState(false),
+    [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
-    [phase, setPhase] = useState<"connect" | "signin" | "signout" | null>(null);
+    [phase, setPhase] = useState<
+      "connect" | "signin" | "signout" | "configuration" | null
+    >(null);
   const working = useRef(false);
   const refresh = useCallback(async () => {
     const value = await clientApi<Session>("/api/admin/disputes?view=session");
@@ -33,6 +36,9 @@ export function useResolverSession() {
       })
       .catch((e) => {
         if (active) setError(e.message);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
       });
     return () => {
       active = false;
@@ -40,7 +46,7 @@ export function useResolverSession() {
   }, []);
   async function run(
     work: () => Promise<void>,
-    action: "connect" | "signin" | "signout",
+    action: "connect" | "signin" | "signout" | "configuration",
   ) {
     if (working.current) return;
     working.current = true;
@@ -104,10 +110,15 @@ export function useResolverSession() {
     connected,
     busy,
     phase,
+    loading,
     error,
     connect,
     chooseWallet,
     signIn,
     signOut,
+    retry: () =>
+      run(async () => {
+        await refresh();
+      }, "configuration"),
   };
 }

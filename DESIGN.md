@@ -35,6 +35,10 @@ Keep one current status and next action visible. Put wallet technical details an
 
 Keep the selected person and current payment action above expandable task details. Reached progress markers stay filled during disputes; show a pause instead of resetting to selection. A dispute before submission must not mark work submitted, and a partial settlement must not mark the full payment complete. Applications show price, availability, reputation and proposal first, with services and coverage expandable. The accepted application has a Selected badge and no selection button.
 
+## Resolver sign-in
+
+The resolver login uses one compact centered panel with Connect wallet and Sign in steps. Show one primary action for the current step; keep alternate wallets secondary and collapse resolver address/help text. Show an explicit configuration error with retry when access cannot load or no resolver is configured. Authentication never authorizes a settlement by itself.
+
 ## Campus discovery and payment history
 
 Keep the wallet/session board in the shared marketplace layout so route changes preserve the account and update stream. Disable the account button during the initial check without adding a loading caption. Merge overlapping background snapshot requests; sign-in, sign-out and mutations request fresh snapshots.
