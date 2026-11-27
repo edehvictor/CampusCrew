@@ -34,14 +34,24 @@ Follow the [deployment guide](docs/DEPLOYMENT.md) for the environment variables,
 
 ## Stack
 
-| Technology | Role |
+| Library or tool | What it does |
 | --- | --- |
-| Next.js, React, TypeScript | Web interface and server-side API |
-| Supabase/Postgres | Profiles, tasks, applications, sessions, messages, evidence metadata, notifications, and reconciled payment records |
-| Stellar Wallets Kit and Stellar SDK | Wallet connection, signed login, transaction signing, and Testnet reads |
-| Rust/Soroban | Escrow custody, authorization, deadlines, disputes, payouts, and refunds |
-| Server-sent updates and a separate worker | Live booking updates, transaction reconciliation, and optional push delivery |
-| Lucide, Plus Jakarta Sans, EB Garamond | Icons and visual system |
+| Next.js + React | App pages, server rendering, and API routes |
+| TypeScript | Types for the interface and server code |
+| Supabase + PostgreSQL | Profiles, tasks, applications, sessions, booking records, messages, and reviews |
+| Stellar Wallets Kit | Connects browser wallets such as Freighter and xBull |
+| Stellar SDK | Verifies wallet sign-in, prepares transactions, and reads Stellar Testnet state |
+| Rust + Soroban SDK | Escrow contract rules for funding, payout, disputes, and refunds |
+| Zod | Validates API inputs and decoded on-chain data at runtime |
+| Server-Sent Events | Sends authenticated booking updates to open pages |
+| Node.js worker | Reconciles pending transactions and delivers queued notifications |
+| web-push | Sends opt-in phone and desktop push notifications |
+| Web app manifest + service worker | Makes the site installable and provides a generic offline page |
+| CSS | Responsive layout and the CampusCrew visual system |
+| Lucide React | Interface icons |
+| Fontsource | Self-hosted Plus Jakarta Sans and EB Garamond fonts |
+| PGlite + Node.js test runner | Tests database behavior and application logic without a live Supabase project |
+| ESLint | Checks code quality and Next.js conventions |
 
 The database is the marketplace record; the contract is the authority for money. A database status alone cannot move USDC. See [ARCHITECTURE.md](ARCHITECTURE.md) for a guided code tour.
 
