@@ -4,14 +4,14 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import {
   readStellarSession,
   requireSameOrigin,
-} from "@/features/book-one/stellar-session";
+} from "@/features/book-one/auth/stellar-session";
 import { PilotError } from "@/features/book-one/pilot-error";
 import {
   bookingExperience,
   experienceError,
   notifications,
   profiles,
-} from "@/features/book-one/experience-server";
+} from "@/features/book-one/services/experience-server";
 const headers = { "Cache-Control": "private, no-store" };
 const schema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("read"), id: z.uuid().optional() }),

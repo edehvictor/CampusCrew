@@ -6,7 +6,7 @@ import {
   Wallet,
 } from "lucide-react";
 import type { Job } from "./model";
-import type { PaymentOperation } from "./pilot-types";
+import type { PaymentOperation } from "@/features/book-one/types/pilot";
 type Props = {
   job: Job;
   busy: boolean;

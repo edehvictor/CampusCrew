@@ -1,9 +1,9 @@
-import { PwaRegister } from "@/components/pwa-controls";
+import { PwaRegister } from "@/components/shared/pwa-controls";
 import type { Metadata } from "next";
 import "@fontsource-variable/plus-jakarta-sans/wght.css";
 import "@fontsource-variable/eb-garamond/wght.css";
 import "./globals.css";
-import "@/components/brand-loader.css";
+import "@/components/shared/brand-loader.css";
 
 export const metadata: Metadata = {
   title: "Campuscrew | Book local services",

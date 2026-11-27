@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { categories, type Job } from "./model";
+import { categories, type Job } from "@/features/book-one/model";
 
 export const pilotAreas = ["On campus", "Around Nsukka", "Online"] as const;
 export type PilotArea = (typeof pilotAreas)[number];
@@ -26,7 +26,7 @@ export type PilotSnapshot = {
   account: { wallet: string; profile: PilotProfile | null } | null;
   paymentsEnabled: boolean;
   experienceReady?: boolean;
-  notifications?: import("./experience-types").ActivityNotification[];
+  notifications?: import("@/features/book-one/types/experience").ActivityNotification[];
   profileId?: string;
   syncWarning?: boolean;
 };

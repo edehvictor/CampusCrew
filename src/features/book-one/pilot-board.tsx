@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { disablePhonePush } from "@/components/pwa-controls";
+import { disablePhonePush } from "@/components/shared/pwa-controls";
 import { Bell, CircleUserRound, Wallet } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Networks } from "@creit.tech/stellar-wallets-kit/types";
 import { BookOneBoard } from "./board";
-import { createSnapshotLoader } from "./snapshot-loader";
-import { getStellarWallet } from "./pilot-wallet";
-import { signPreparedWalletTransaction } from "./wallet-signing";
+import { createSnapshotLoader } from "@/features/book-one/services/snapshot-loader";
+import { useLiveSnapshot } from "./hooks/use-live-snapshot";
+import { getStellarWallet } from "@/features/book-one/auth/pilot-wallet";
+import { signPreparedWalletTransaction } from "@/features/book-one/auth/wallet-signing";
 import { PilotDialog, type PilotPanel } from "./pilot-dialog";
 import { PilotError } from "./pilot-error";
 import type {
@@ -17,7 +18,7 @@ import type {
   PilotMutation,
   PilotProfile,
   PilotSnapshot,
-} from "./pilot-types";
+} from "@/features/book-one/types/pilot";
 import "./pilot.css";
 
 const blank: PilotSnapshot = {
@@ -106,61 +107,7 @@ export function PilotBoard() {
     };
   }, [load]);
 
-  useEffect(() => {
-    let active = true;
-    let stream: EventSource | undefined;
-    let fallback: ReturnType<typeof setTimeout> | undefined;
-    if (accountWallet) {
-      stream = new EventSource("/api/updates");
-      stream.addEventListener("snapshot", (event) => {
-        if (active) {
-          setSnapshot(
-            JSON.parse((event as MessageEvent).data) as PilotSnapshot,
-          );
-          setConnected(true);
-        }
-      });
-      stream.addEventListener("delayed", () => {
-        if (active) setConnected(false);
-      });
-      stream.onerror = () => {
-        if (active) setConnected(false);
-      };
-    }
-    const check = async () => {
-      if (!active) return;
-      if (
-        document.visibilityState === "visible" &&
-        (!stream || stream.readyState !== EventSource.OPEN)
-      ) {
-        try {
-          await load();
-        } catch {
-          /* The connection banner and next retry handle transient failures. */
-        }
-      }
-      if (active)
-        fallback = setTimeout(() => {
-          void check();
-        }, 7000);
-    };
-    const wake = () => {
-      if (active && document.visibilityState === "visible")
-        void load().catch(() => {});
-    };
-    fallback = setTimeout(() => {
-      void check();
-    }, 3000);
-    window.addEventListener("focus", wake);
-    document.addEventListener("visibilitychange", wake);
-    return () => {
-      active = false;
-      stream?.close();
-      clearTimeout(fallback);
-      window.removeEventListener("focus", wake);
-      document.removeEventListener("visibilitychange", wake);
-    };
-  }, [accountWallet, load]);
+  useLiveSnapshot(accountWallet, load, setSnapshot, setConnected);
 
   function finishSetup(data: PilotSnapshot) {
     const intent = pending.current;

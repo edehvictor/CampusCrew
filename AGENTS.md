@@ -2,7 +2,8 @@
 
 - Use this Next.js App Router checkout for development. Run `npm ci` once, then `npm run dev`. Configure the connected pilot via .env.local. The booking tests need no credentials.
 - Read DESIGN.md for interface conventions and ROADMAP.md for build order.
-- Keep route entry points in `src/app`, shared navigation in `src/components`, and the Book One UI, models, and booking logic in `src/features/book-one`.
+- Keep route entry points in `src/app`, shared navigation in `src/components`, reusable app UI in `src/components/shared`, and marketplace-specific UI in `src/features/book-one`.
+- Put wallet login and session code in `src/features/book-one/auth`; marketplace and Stellar operations in `services`; shared feature schemas and data shapes in `types`; and extracted custom hooks in `hooks`. Keep built-in React hooks inside the component or custom hook that uses them.
 - Keep mock data in `tests/fixtures`. Run `npm test` to check booking behavior with test fixtures.
 - Enforce ownership and booking transitions on the server.
 - Use Lucide for interface icons. Preserve keyboard navigation, explicit field labels, and a usable mobile list/detail flow.

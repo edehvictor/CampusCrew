@@ -1,8 +1,8 @@
 import "server-only";
 
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { PilotError } from "./pilot-error";
-import { isStellarWallet, stellarSessionCookie, tokenHash } from "./stellar-auth";
+import { PilotError } from "@/features/book-one/pilot-error";
+import { isStellarWallet, stellarSessionCookie, tokenHash } from "@/features/book-one/auth/stellar-auth";
 
 export type StellarUser = { wallet: string };
 

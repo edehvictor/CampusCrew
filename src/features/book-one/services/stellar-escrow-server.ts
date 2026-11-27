@@ -8,8 +8,8 @@ import {
   scValToNative,
 } from "@stellar/stellar-sdk";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { PilotError } from "./pilot-error";
-import { checkStellarDatabase } from "./stellar-session";
+import { PilotError } from "@/features/book-one/pilot-error";
+import { checkStellarDatabase } from "@/features/book-one/auth/stellar-session";
 import {
   assertBookingTerms,
   bookingChainId,
@@ -22,9 +22,9 @@ import {
   type ChainBooking,
   type EscrowOperation,
   type EscrowTerms,
-} from "./stellar-escrow";
-import type { Job } from "./model";
-import { readWalletBalance } from "./stellar-balance";
+} from "@/features/book-one/services/stellar-escrow";
+import type { Job } from "@/features/book-one/model";
+import { readWalletBalance } from "@/features/book-one/services/stellar-balance";
 
 type EscrowRow = EscrowTerms & {
   chain_state: string | null;

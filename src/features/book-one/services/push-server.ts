@@ -1,7 +1,7 @@
 import "server-only";
 import webpush from "web-push";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { experienceError } from "./experience-server";
+import { experienceError } from "@/features/book-one/services/experience-server";
 export function pushConfig() {
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
     privateKey = process.env.VAPID_PRIVATE_KEY,

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { Keypair } from "@stellar/stellar-sdk";
-import { readWalletBalance, testUsdcIssuer, testnetHorizon } from "../src/features/book-one/stellar-balance.ts";
+import { readWalletBalance, testUsdcIssuer, testnetHorizon } from "../src/features/book-one/services/stellar-balance.ts";
 
 test("balances match the network, wallet, and Circle issuer rather than token name alone", async () => {
   const wallet = Keypair.random().publicKey();

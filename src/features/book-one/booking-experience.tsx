@@ -8,7 +8,7 @@ import {
 } from "react";
 import { MessageCircle, Paperclip, Star, X } from "lucide-react";
 import type { Job } from "./model";
-import type { BookingExperience } from "./experience-types";
+import type { BookingExperience } from "@/features/book-one/types/experience";
 export function BookingExperiencePanel({
   job,
   wallet,

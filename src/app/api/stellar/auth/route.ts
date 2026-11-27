@@ -5,8 +5,8 @@ import { PilotError } from "@/features/book-one/pilot-error";
 import {
   challengeMatches, createSignInChallenge, isStellarWallet, newSessionToken,
   stellarChallengeCookie, stellarSessionCookie, tokenHash, verifySignInSignature,
-} from "@/features/book-one/stellar-auth";
-import { checkStellarDatabase, requireSameOrigin } from "@/features/book-one/stellar-session";
+} from "@/features/book-one/auth/stellar-auth";
+import { checkStellarDatabase, requireSameOrigin } from "@/features/book-one/auth/stellar-session";
 import { z } from "zod";
 
 export const runtime = "nodejs";

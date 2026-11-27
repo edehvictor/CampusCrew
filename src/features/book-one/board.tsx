@@ -3,7 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { pageFromPath, pageHref, routeId } from "./navigation";
 import { ExperiencePage } from "./experience-pages";
-import type { ActivityNotification } from "./experience-types";
+import type { ActivityNotification } from "@/features/book-one/types/experience";
 import "./experience.css";
 import { CheckCircle2, ClipboardList } from "lucide-react";
 import {
@@ -27,7 +27,7 @@ import {
   type EntryIntent,
   type PaymentOperation,
   type PilotMutation,
-} from "./pilot-types";
+} from "@/features/book-one/types/pilot";
 import { RequestDetail } from "./request-detail";
 import { RequestDialog, type DialogKind } from "./request-dialog";
 import { emptyFilters, RequestList } from "./request-list";

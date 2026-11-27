@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Star, MapPin, Bell } from "lucide-react";
-import { PwaControls } from "@/components/pwa-controls";
+import { PwaControls } from "@/components/shared/pwa-controls";
 import { ProfileBalance } from "./profile-balance";
 import { WalletAddress } from "./wallet-address";
 import { categories, type Job, type Page } from "./model";
@@ -11,7 +11,7 @@ import type {
   ActivityNotification,
   PublicProvider,
   Reputation,
-} from "./experience-types";
+} from "@/features/book-one/types/experience";
 export function ReputationLine({ stats }: { stats?: Reputation }) {
   return (
     <div className="reputation-line">

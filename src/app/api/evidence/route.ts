@@ -5,15 +5,15 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import {
   readStellarSession,
   requireSameOrigin,
-} from "@/features/book-one/stellar-session";
+} from "@/features/book-one/auth/stellar-session";
 import {
   participant,
   experienceError,
-} from "@/features/book-one/experience-server";
+} from "@/features/book-one/services/experience-server";
 import {
   evidenceLimit,
   evidenceMime,
-} from "@/features/book-one/evidence-validation";
+} from "@/features/book-one/services/evidence-validation";
 import { PilotError } from "@/features/book-one/pilot-error";
 export const runtime = "nodejs";
 const headers = { "Cache-Control": "private, no-store" };

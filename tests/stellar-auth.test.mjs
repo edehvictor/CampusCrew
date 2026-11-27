@@ -3,7 +3,7 @@ import test from "node:test";
 import { hash, Keypair } from "@stellar/stellar-sdk";
 import {
   challengeMatches, createSignInChallenge, isStellarWallet, newSessionToken, tokenHash, verifySignInSignature,
-} from "../src/features/book-one/stellar-auth.ts";
+} from "../src/features/book-one/auth/stellar-auth.ts";
 
 test("Stellar login verifies the published SEP-53 signature vector", () => {
   const address = "GBXFXNDLV4LSWA4VB7YIL5GBD7BVNR22SGBTDKMO2SBZZHDXSKZYCP7L";

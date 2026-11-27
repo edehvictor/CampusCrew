@@ -1,9 +1,9 @@
 import { ExternalLink, RotateCw, Wallet } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import type { WalletBalance } from "./stellar-balance";
-import { getStellarWallet } from "./pilot-wallet";
+import type { WalletBalance } from "@/features/book-one/services/stellar-balance";
+import { getStellarWallet } from "@/features/book-one/auth/pilot-wallet";
 import { Networks } from "@creit.tech/stellar-wallets-kit/types";
-import { signPreparedWalletTransaction } from "./wallet-signing";
+import { signPreparedWalletTransaction } from "@/features/book-one/auth/wallet-signing";
 
 const wholeNumber = new Intl.NumberFormat("en", { maximumFractionDigits: 0 });
 

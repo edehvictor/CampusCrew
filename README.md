@@ -42,7 +42,7 @@ The contract in `contracts/escrow` passed formatting, 14 Rust tests, Clippy, and
 3. Run `npm.cmd run stellar:enable`. It checks the deployed code and payment tables before enabling the local payment controls. Restart Next.js if needed. The current local pilot is enabled.
 4. To deploy a new reviewed version, download its passing CI artifact into `target/verified/campuscrew_escrow.wasm`, then run `npm.cmd run stellar:deploy`. Deployment never enables payments automatically. Testnet deployer/resolver secrets stay in the ignored `.env.stellar-testnet.local`; the Next.js app does not need those secrets.
 
-The first live technical check created, accepted, and cancelled an unfunded booking on Testnet. Its receipts are in `tests/receipts/stellar-testnet-smoke.json`. It transferred **zero USDC** and does not count as a completed service booking. The first browser-driven USDC funding/payout remains to be confirmed. Book Together is still a later milestone.
+The first live technical check created, accepted, and cancelled an unfunded booking on Testnet. Its receipts are in `tests/receipts/stellar-testnet-smoke.json`. It transferred **zero USDC** and does not count as a completed service booking. An individual 1-test-USDC funding and payout was later confirmed; see the November 23 entry in ROADMAP.md for both receipts. Book Together is still a later milestone.
 
 ### Two-wallet payment test
 
@@ -76,7 +76,7 @@ cargo clippy --locked --all-targets -- -D warnings
 cargo build --locked --target wasm32v1-none --release
 ```
 
-See ROADMAP.md for the Stellar migration and buildathon delivery targets, DESIGN.md for layout and brand conventions, and AGENTS.md for repository guidance.
+See ARCHITECTURE.md for a guided code tour, ROADMAP.md for the Stellar migration and buildathon delivery targets, DESIGN.md for layout and brand conventions, and AGENTS.md for repository guidance.
 
 Based on the [Chucks1093 Next.js server template](https://github.com/Chucks1093/templates/tree/main/nextjs-server-template).
 

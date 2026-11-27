@@ -1,5 +1,5 @@
-import { readSnapshot } from "@/features/book-one/pilot-server";
-import { readStellarSession } from "@/features/book-one/stellar-session";
+import { readSnapshot } from "@/features/book-one/services/pilot-server";
+import { readStellarSession } from "@/features/book-one/auth/stellar-session";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;

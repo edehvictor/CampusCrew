@@ -1,13 +1,13 @@
 import "server-only";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { checkStellarDatabase } from "./stellar-session";
-import { PilotError } from "./pilot-error";
-import type { Job } from "./model";
+import { checkStellarDatabase } from "@/features/book-one/auth/stellar-session";
+import { PilotError } from "@/features/book-one/pilot-error";
+import type { Job } from "@/features/book-one/model";
 import type {
   PublicProvider,
   ActivityNotification,
   BookingExperience,
-} from "./experience-types";
+} from "@/features/book-one/types/experience";
 export function experienceError(
   error: { code: string; message: string } | null,
 ) {

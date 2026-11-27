@@ -2,7 +2,7 @@ import Link from "next/link";
 import { LogOut, MapPin, Pencil, Wallet, X } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { categories, type Job } from "./model";
-import { pilotAreas, profileSchema, type PilotProfile } from "./pilot-types";
+import { pilotAreas, profileSchema, type PilotProfile } from "@/features/book-one/types/pilot";
 import { ProfileBalance } from "./profile-balance";
 import { WalletAddress } from "./wallet-address";
 

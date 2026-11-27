@@ -12,7 +12,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { BookingPayment } from "./booking-payment";
-import type { PaymentOperation } from "./pilot-types";
+import type { PaymentOperation } from "@/features/book-one/types/pilot";
 import { CategoryIcon } from "./category-icon";
 import { price, type Job, type Quote, type Status } from "./model";
 

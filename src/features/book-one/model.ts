@@ -40,7 +40,7 @@ export type Quote = {
   note: string;
   own?: boolean;
   profileId?: string;
-  reputation?: import("./experience-types").Reputation;
+  reputation?: import("@/features/book-one/types/experience").Reputation;
   bio?: string;
   skills?: Category[];
   coverage?: string[];

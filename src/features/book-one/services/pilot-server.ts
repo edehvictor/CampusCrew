@@ -1,25 +1,25 @@
 import "server-only";
 
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import type { Job } from "./model";
-import type { PilotMutation, PilotProfile, PilotSnapshot } from "./pilot-types";
-import { PilotError } from "./pilot-error";
+import type { Job } from "@/features/book-one/model";
+import type { PilotMutation, PilotProfile, PilotSnapshot } from "@/features/book-one/types/pilot";
+import { PilotError } from "@/features/book-one/pilot-error";
 import {
   checkStellarDatabase,
   readStellarSession,
   type StellarUser,
-} from "./stellar-session";
+} from "@/features/book-one/auth/stellar-session";
 import {
   enrichEscrowJobs,
   getEscrowConfig,
   reconcilePending,
-} from "./stellar-escrow-server";
+} from "@/features/book-one/services/stellar-escrow-server";
 
 import {
   enrichExperience,
   notifications,
   experienceError,
-} from "./experience-server";
+} from "@/features/book-one/services/experience-server";
 
 export const authenticate = readStellarSession;
 
@@ -59,7 +59,7 @@ export async function readSnapshot(
     : null;
   let jobs = await enrichEscrowJobs((board.data ?? []) as Job[], user?.wallet);
   let experienceReady = true;
-  let alerts: import("./experience-types").ActivityNotification[] = [];
+  let alerts: import("@/features/book-one/types/experience").ActivityNotification[] = [];
   let profileId: string | undefined;
   try {
     jobs = await enrichExperience(jobs, user?.wallet);

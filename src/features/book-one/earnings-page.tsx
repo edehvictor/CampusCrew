@@ -22,7 +22,7 @@ import {
   paymentRecords,
   paymentTotal,
   type PaymentRecord,
-} from "./payment-history";
+} from "@/features/book-one/services/payment-history";
 import "./earnings.css";
 
 const amount = (value: number) =>

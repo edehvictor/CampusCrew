@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { BASE_FEE, Networks, Operation, TransactionBuilder, rpc } from "@stellar/stellar-sdk";
 import { z } from "zod";
-import { readStellarSession, requireSameOrigin } from "@/features/book-one/stellar-session";
-import { readWalletBalance } from "@/features/book-one/stellar-balance";
-import { stellarTestnetRpc, testUsdc } from "@/features/book-one/stellar-escrow";
+import { readStellarSession, requireSameOrigin } from "@/features/book-one/auth/stellar-session";
+import { readWalletBalance } from "@/features/book-one/services/stellar-balance";
+import { stellarTestnetRpc, testUsdc } from "@/features/book-one/services/stellar-escrow";
 import { PilotError } from "@/features/book-one/pilot-error";
 
 export const runtime = "nodejs";

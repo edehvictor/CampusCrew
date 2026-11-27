@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { randomUUID } from "node:crypto";
 import { Account, Address, Keypair, Networks, Operation, TransactionBuilder, scValToNative } from "@stellar/stellar-sdk";
-import { assertBookingTerms, bookingChainId, bookingLedgerKey, buildEscrowTransaction, escrowCall, permittedOperations, testUsdcContract, usdcUnits, verifySignedTransaction } from "../src/features/book-one/stellar-escrow.ts";
+import { assertBookingTerms, bookingChainId, bookingLedgerKey, buildEscrowTransaction, escrowCall, permittedOperations, testUsdcContract, usdcUnits, verifySignedTransaction } from "../src/features/book-one/services/stellar-escrow.ts";
 
 const owner = Keypair.random();
 const provider = Keypair.random();

@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { getPilotConfig } from "@/features/book-one/pilot-config";
-import { authenticate, readSnapshot, runPilotMutation } from "@/features/book-one/pilot-server";
+import { authenticate, readSnapshot, runPilotMutation } from "@/features/book-one/services/pilot-server";
 import { PilotError } from "@/features/book-one/pilot-error";
-import { mutationSchema } from "@/features/book-one/pilot-types";
-import { requireSameOrigin } from "@/features/book-one/stellar-session";
+import { mutationSchema } from "@/features/book-one/types/pilot";
+import { requireSameOrigin } from "@/features/book-one/auth/stellar-session";
 
 const headers = { "Cache-Control": "private, no-store" };
 

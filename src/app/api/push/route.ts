@@ -3,10 +3,10 @@ import { z } from "zod";
 import {
   readStellarSession,
   requireSameOrigin,
-} from "@/features/book-one/stellar-session";
+} from "@/features/book-one/auth/stellar-session";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { pushConfig } from "@/features/book-one/push-server";
-import { experienceError } from "@/features/book-one/experience-server";
+import { pushConfig } from "@/features/book-one/services/push-server";
+import { experienceError } from "@/features/book-one/services/experience-server";
 import { PilotError } from "@/features/book-one/pilot-error";
 const headers = { "Cache-Control": "private,no-store" };
 export function GET() {

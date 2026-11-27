@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { readStellarSession } from "@/features/book-one/stellar-session";
-import { readWalletBalance } from "@/features/book-one/stellar-balance";
+import { readStellarSession } from "@/features/book-one/auth/stellar-session";
+import { readWalletBalance } from "@/features/book-one/services/stellar-balance";
 import { PilotError } from "@/features/book-one/pilot-error";
 
 export const runtime = "nodejs";

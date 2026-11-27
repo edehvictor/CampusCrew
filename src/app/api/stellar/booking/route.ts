@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { escrowOperations } from "@/features/book-one/stellar-escrow";
-import { prepareEscrow, submitEscrow, syncEscrow } from "@/features/book-one/stellar-escrow-server";
-import { readStellarSession, requireSameOrigin } from "@/features/book-one/stellar-session";
+import { escrowOperations } from "@/features/book-one/services/stellar-escrow";
+import { prepareEscrow, submitEscrow, syncEscrow } from "@/features/book-one/services/stellar-escrow-server";
+import { readStellarSession, requireSameOrigin } from "@/features/book-one/auth/stellar-session";
 import { PilotError } from "@/features/book-one/pilot-error";
 
 export const runtime = "nodejs";

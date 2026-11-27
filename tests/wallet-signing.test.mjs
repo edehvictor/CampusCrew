@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { Networks } from "@stellar/stellar-sdk";
-import { signPreparedWalletTransaction, walletTestnetPassphrase } from "../src/features/book-one/wallet-signing.ts";
+import { signPreparedWalletTransaction, walletTestnetPassphrase } from "../src/features/book-one/auth/wallet-signing.ts";
 
 const prepared = { wallet: "expected-wallet", xdr: "prepared-transaction", networkPassphrase: Networks.TESTNET };
 function kit(productId = "varial") {

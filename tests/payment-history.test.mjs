@@ -4,8 +4,8 @@ import {
   paymentRecords,
   paymentTotal,
   paymentCsv,
-} from "../src/features/book-one/payment-history.ts";
-import { createSnapshotLoader } from "../src/features/book-one/snapshot-loader.ts";
+} from "../src/features/book-one/services/payment-history.ts";
+import { createSnapshotLoader } from "../src/features/book-one/services/snapshot-loader.ts";
 const base = {
   id: "booking-1",
   title: "Deliver assignment",

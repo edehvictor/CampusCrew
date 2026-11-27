@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { BrandLoader } from "@/components/brand-loader";
+import { BrandLoader } from "@/components/shared/brand-loader";
 
 const StellarBoard = dynamic(() => import("./pilot-board").then(module => module.PilotBoard), {
   ssr: false,

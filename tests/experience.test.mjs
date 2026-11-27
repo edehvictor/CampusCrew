@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { PGlite } from "@electric-sql/pglite";
 import { Keypair, Address } from "@stellar/stellar-sdk";
-import { evidenceMime } from "../src/features/book-one/evidence-validation.ts";
+import { evidenceMime } from "../src/features/book-one/services/evidence-validation.ts";
 const db = new PGlite(),
   owner = Keypair.random().publicKey(),
   provider = Keypair.random().publicKey(),

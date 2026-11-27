@@ -1,4 +1,4 @@
-import type { Job } from "./model";
+import type { Job } from "@/features/book-one/model";
 
 export type PaymentRecord = {
   id: string;
