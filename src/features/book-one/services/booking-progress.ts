@@ -24,29 +24,41 @@ export function bookingProgress(
             : job.accepted
               ? 0
               : -1;
+  const reached =
+    job.payment?.prefunded && lastReached < 3
+      ? state === "Funded"
+        ? 2
+        : 1
+      : lastReached;
   return {
-    lastReached,
+    lastReached: reached,
     paused,
     stopped,
-    current: paused || stopped || state === "Paid" ? -1 : lastReached,
-    title: paused
-      ? "Dispute under review"
-      : job.status === "Cancelled"
-        ? "Booking cancelled"
-        : job.status === "Refunded"
-          ? "Refund completed"
-          : stopped
-            ? "Refund available"
-            : state === "Paid"
-              ? "Payment released"
-              : state === "Submitted"
-                ? "Work ready for review"
-                : state === "Funded"
-                  ? "Funded · work in progress"
-                  : state === "Funding"
-                    ? "Accepted · awaiting funding"
-                    : state === "Proposed"
-                      ? "Awaiting provider acceptance"
-                      : "Provider selected",
+    current:
+      paused || stopped || state === "Paid" || job.status === "Removed"
+        ? -1
+        : reached,
+    title:
+      job.status === "Removed"
+        ? "Task removed - budget refunded"
+        : paused
+          ? "Dispute under review"
+          : job.status === "Cancelled"
+            ? "Booking cancelled"
+            : job.status === "Refunded"
+              ? "Refund completed"
+              : stopped
+                ? "Refund available"
+                : state === "Paid"
+                  ? "Payment released"
+                  : state === "Submitted"
+                    ? "Work ready for review"
+                    : state === "Funded"
+                      ? "Funded · work in progress"
+                      : state === "Funding"
+                        ? "Accepted · awaiting funding"
+                        : state === "Proposed"
+                          ? "Awaiting provider acceptance"
+                          : "Provider selected",
   };
 }

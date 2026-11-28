@@ -13,6 +13,14 @@ Use a Supabase project for the Testnet pilot. Apply these migrations in order (b
 5. `supabase/migrations/20261123000300_refund_notifications.sql`
 6. `supabase/migrations/20261127000100_provider_payout_receipts.sql`
 7. `supabase/migrations/20261127000200_dispute_dashboard.sql`
+8. `supabase/migrations/20261127000300_nearby_providers.sql`
+9. `supabase/migrations/20261128000100_task_application_editing.sql`
+
+**Evidence editing:** apply `supabase/migrations/20261128000300_evidence_workflow.sql` with the matching UI/server update. It can be applied without funded posting. The worker retries removed-object cleanup. See [the evidence guide](EVIDENCE_UPLOADS.md).
+
+**Funded posting is a separate rollout.** The new `20261128000200_funded_task_lifecycle.sql` migration changes public task visibility and payment preparation. Apply it together with the new, separately verified contract following [FUNDED_TASKS.md](FUNDED_TASKS.md). Do not replace the legacy contract configuration. New task posting stays disabled until `STELLAR_FUNDED_ENABLED` is enabled; old bookings remain usable.
+
+Deploy the current web code alongside the editing migration. After it is applied, legacy application/selection calls are rejected so they cannot bypass agreement-version checks. Refresh browsers after deployment. Follow [task editing](TASK_EDITING.md) and [nearby discovery](NEARBY_PROVIDERS.md) for the two-account rollout checks.
 
 The older `20261116000100_book_one.sql` belongs to the previous GoodDollar/Celo pilot and is not required to create a fresh Stellar pilot database. Confirm each migration succeeds before proceeding. The service-role key bypasses row-level restrictions and must remain server-side.
 

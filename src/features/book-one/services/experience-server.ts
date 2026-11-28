@@ -1,4 +1,5 @@
 import "server-only";
+import { notificationPath } from "./notification-path";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { checkStellarDatabase } from "@/features/book-one/auth/stellar-session";
 import { PilotError } from "@/features/book-one/pilot-error";
@@ -41,19 +42,18 @@ export async function notifications(
 ): Promise<ActivityNotification[]> {
   const r = await getSupabaseAdmin()
     .from("campuscrew_notifications")
-    .select("id,request_id,title,created_at,read_at")
+    .select("id,event_key,request_id,title,created_at,read_at")
     .eq("wallet", wallet)
     .order("created_at", { ascending: false })
     .limit(100);
   experienceError(r.error);
   return (r.data ?? []).map((n) => ({
-    ...n,
+    id: n.id,
+    request_id: n.request_id,
+    created_at: n.created_at,
+    read_at: n.read_at,
     title: n.title.replace(/ \? /g, " - "),
-    path: n.request_id
-      ? (n.title.startsWith("New application")
-          ? "/me/tasks/"
-          : "/me/bookings/") + n.request_id
-      : "/me/notifications",
+    path: notificationPath(n.request_id, n.event_key),
   }));
 }
 export async function enrichExperience(jobs: Job[], wallet?: string) {
@@ -130,7 +130,8 @@ export async function bookingExperience(
       .limit(100),
     db
       .from("campuscrew_booking_evidence")
-      .select("id,name,mime,created_at")
+      .select("id,name,mime,bytes,uploader,created_at")
+      .is("removed_at", null)
       .eq("request_id", id)
       .order("created_at"),
     db
@@ -148,7 +149,8 @@ export async function bookingExperience(
   const own = reviews.data?.find((r) => r.reviewer === wallet);
   return {
     events: (events.data ?? []).map((event) => ({
-      ...event, label: event.label.replace(/ \? /g, " - "),
+      ...event,
+      label: event.label.replace(/ \? /g, " - "),
     })),
     messages: (messages.data ?? []).reverse().map((m) => ({
       id: m.id,
@@ -157,7 +159,10 @@ export async function bookingExperience(
       name: m.sender === wallet ? "You" : "Booking partner",
       created_at: m.created_at,
     })),
-    evidence: evidence.data ?? [],
+    evidence: (evidence.data ?? []).map(({ uploader, ...file }) => ({
+      ...file,
+      mine: uploader === wallet,
+    })),
     canReview:
       escrow.data?.chain_state === "Paid" &&
       Boolean(escrow.data.settlement_tx) &&

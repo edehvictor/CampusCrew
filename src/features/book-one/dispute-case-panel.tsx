@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, type FormEvent } from "react";
-import { Paperclip } from "lucide-react";
+import { EvidenceUploader } from "./evidence-uploader";
 import type { DisputeCase } from "./types/disputes";
 import type { Job } from "./model";
 import { clientApi } from "./services/client-api";
@@ -58,25 +58,6 @@ export function DisputeCasePanel({ job }: { job: Job }) {
       setBusy(false);
     }
   }
-  async function upload(file: File) {
-    setBusy(true);
-    setError("");
-    try {
-      const body = new FormData();
-      body.set("file", file);
-      const r = await fetch("/api/evidence?booking=" + job.id, {
-        method: "POST",
-        body,
-      });
-      const v = await r.json();
-      if (!r.ok) throw new Error(v.error);
-      setData(await load());
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Upload failed.");
-    } finally {
-      setBusy(false);
-    }
-  }
   return (
     <div className="dispute-case-panel">
       {error && <p role="alert">{error}</p>}
@@ -126,32 +107,21 @@ export function DisputeCasePanel({ job }: { job: Job }) {
             Private to the booking participants and the authorized resolver. Up
             to three files per person.
           </p>
-          {data.evidence.map((f) => (
-            <p key={f.id}>
-              <a
-                href={"/api/evidence?id=" + f.id}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {f.name}
-              </a>
-            </p>
-          ))}
-          {data.state === "Disputed" && (
-            <label>
-              <Paperclip size={14} /> Add photo or document
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp,application/pdf"
-                disabled={busy}
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) void upload(file);
-                  e.target.value = "";
-                }}
-              />
-            </label>
-          )}
+          <EvidenceUploader
+            booking={job.id}
+            files={data.evidence.map((f) => ({
+              ...f,
+              mime: f.mime ?? "application/pdf",
+              mine:
+                f.uploader ===
+                (job.own ? data.ownerWallet : data.providerWallet),
+            }))}
+            editable={data.state === "Disputed"}
+            lockedLabel="Case record - locked"
+            onRefresh={async () => {
+              setData(await load());
+            }}
+          />
           {data.decisions.map((d) => (
             <article key={d.id}>
               <h4>Resolver decision</h4>

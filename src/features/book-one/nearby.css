@@ -1,0 +1,123 @@
+.nearby-discovery-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 18px;
+}
+.nearby-discovery-controls small {
+  font-size: 12px;
+  color: var(--muted);
+}
+.nearby-discovery-controls [aria-pressed="true"] {
+  border-color: var(--brand);
+  background: var(--primary-wash);
+  color: var(--primary-ink);
+}
+.provider-discovery .provider-search {
+  grid-template-columns: minmax(0, 1fr) 175px 180px;
+  margin: 16px 0 24px;
+}
+.nearby-explanation {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  margin: 12px 0;
+  line-height: 1.7;
+}
+.provider-distance {
+  display: grid;
+  gap: 5px;
+  margin: 12px 0;
+}
+.provider-card h2 { overflow-wrap: anywhere; }
+.provider-distance strong {
+  font-size: 12px;
+  color: var(--primary-ink);
+}
+.provider-distance small {
+  font-size: 10px;
+  color: var(--muted);
+}
+.nearby-empty {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--muted);
+  gap: 10px;
+  border: 1px dashed var(--control-line);
+  border-radius: 14px;
+}
+.nearby-empty h2 {
+  margin: 0;
+  color: var(--ink);
+}
+.nearby-empty p {
+  max-width: 500px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.provider-location {
+  margin: 24px 0;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.provider-location-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--primary-ink);
+}
+.provider-location-heading > div {
+  flex: 1;
+  min-width: 0;
+}
+.provider-location-heading h2 {
+  margin: 0 0 5px;
+  color: var(--ink);
+  font-size: 17px;
+}
+.provider-location-heading p {
+  font-size: 12px;
+  color: var(--muted);
+}
+.provider-location > p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.8;
+  margin: 16px 0;
+}
+.provider-location-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+@media (max-width: 700px) {
+  .provider-discovery .provider-search {
+    grid-template-columns: 1fr 1fr;
+  }
+  .provider-discovery .provider-search input {
+    grid-column: 1/-1;
+  }
+}
+@media (max-width: 420px) {
+  .provider-discovery .provider-search {
+    grid-template-columns: 1fr;
+  }
+  .provider-location {
+    padding: 18px;
+  }
+  .provider-location-heading {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .provider-location-actions .button {
+    width: 100%;
+    white-space: normal;
+  }
+}

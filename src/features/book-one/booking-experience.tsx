@@ -9,40 +9,58 @@ import {
 import { MessageCircle, Paperclip, Star, X } from "lucide-react";
 import type { Job } from "./model";
 import type { BookingExperience } from "@/features/book-one/types/experience";
+import { EvidenceUploader } from "./evidence-uploader";
 import { DisputeCasePanel } from "./dispute-case-panel";
 export function BookingExperiencePanel({
   job,
   wallet,
   onReviewed,
+  onEvidencePendingChange,
 }: {
   job: Job;
   wallet?: string;
   onReviewed?: () => void;
+  onEvidencePendingChange?: (pending: boolean) => void;
 }) {
   const [data, setData] = useState<BookingExperience | null>(null),
     [tab, setTab] = useState("work"),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
-    [reviewOpen, setReviewOpen] = useState(false),
-    [notice, setNotice] = useState("");
+    [reviewOpen, setReviewOpen] = useState(false);
+  const [localEvidencePending, setLocalEvidencePending] = useState(false);
+  const evidenceBlocked =
+    localEvidencePending ||
+    (!job.own &&
+      job.status === "Funded" &&
+      Boolean(job.evidenceRequired) &&
+      !data?.evidence.some((f) => f.mine));
+  useEffect(() => {
+    onEvidencePendingChange?.(evidenceBlocked);
+    return () => onEvidencePendingChange?.(false);
+  }, [evidenceBlocked, onEvidencePendingChange]);
+  const [disputeVisited, setDisputeVisited] = useState(false);
   const reviewShown = useRef(false);
   const clientId = useRef<string | null>(null);
+  const loadSequence = useRef({ value: 0 });
   const load = useCallback(async () => {
+    const sequence = ++loadSequence.current.value;
     const r = await fetch("/api/experience?view=booking&id=" + job.id, {
       cache: "no-store",
     });
     const value = await r.json();
     if (!r.ok) throw new Error(value.error);
+    if (sequence === loadSequence.current.value)
+      setData(value as BookingExperience);
     return value as BookingExperience;
   }, [job.id]);
   useEffect(() => {
     let active = true;
+    const sequenceCounter = loadSequence.current;
     let timer: ReturnType<typeof setTimeout>;
     const tick = async () => {
       try {
         const next = await load();
         if (active) {
-          setData(next);
           setError("");
           if (next.canReview && !reviewShown.current) {
             reviewShown.current = true;
@@ -72,6 +90,7 @@ export function BookingExperiencePanel({
     void tick();
     return () => {
       active = false;
+      sequenceCounter.value++;
       clearTimeout(timer);
     };
   }, [job.id, job.status, wallet, load]);
@@ -98,30 +117,9 @@ export function BookingExperiencePanel({
       if (!r.ok) throw new Error(value.error);
       clientId.current = null;
       form.reset();
-      setData(await load());
+      await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Message not sent.");
-    } finally {
-      setBusy(false);
-    }
-  }
-  async function upload(file: File) {
-    if (busy) return;
-    setBusy(true);
-    setError("");
-    try {
-      const form = new FormData();
-      form.set("file", file);
-      const r = await fetch("/api/evidence?booking=" + job.id, {
-        method: "POST",
-        body: form,
-      });
-      const value = await r.json();
-      if (!r.ok) throw new Error(value.error);
-      setData(await load());
-      setNotice("Evidence saved privately to this booking.");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Upload failed.");
     } finally {
       setBusy(false);
     }
@@ -143,7 +141,10 @@ export function BookingExperiencePanel({
             type="button"
             key={id}
             aria-pressed={tab === id}
-            onClick={() => setTab(id)}
+            onClick={() => {
+              setTab(id);
+              if (id === "dispute") setDisputeVisited(true);
+            }}
           >
             {label}
           </button>
@@ -154,88 +155,86 @@ export function BookingExperiencePanel({
           {error}
         </p>
       )}
-      {notice && <p role="status">{notice}</p>}
-      {tab === "dispute" && <DisputeCasePanel key={job.id} job={job}/>}
-      {tab === "work" && (
-        <>
-          <div className="evidence-heading">
-            <h4>
-              <Paperclip size={16} />
-              Completion evidence
-            </h4>
-            <span>
-              {job.evidenceRequired ? "Required by task owner" : "Optional"}
-            </span>
-          </div>
-          <p className="privacy-note">
-            {job.evidenceRequired
-              ? "This task requires a photo or document before completion can be submitted."
-              : "Upload evidence when useful or requested. A completion note is still required."}{" "}
-            Booking participants can access these files. If a dispute is opened,
-            its authorized resolver can review them too.
-          </p>
-          {job.completion && (
-            <div className="completion-note">
-              <strong>Provider&apos;s completion note</strong>
-              <p>{job.completion}</p>
-            </div>
-          )}
-          <ul className="evidence-list">
-            {data?.evidence.map((file) => (
-              <li key={file.id}>
-                <a
-                  href={"/api/evidence?id=" + file.id}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {file.name} /
-                </a>
-              </li>
-            ))}
-          </ul>
-          {!job.own && job.status === "Funded" && (
-            <label className="evidence-upload">
-              {busy ? "Uploading..." : "Add photo or document"}
-              <input
-                aria-label="Upload completion evidence"
-                type="file"
-                accept="image/jpeg,image/png,image/webp,application/pdf"
-                disabled={busy || (data?.evidence.length ?? 0) >= 3}
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) void upload(file);
-                  e.target.value = "";
-                }}
-              />
-              <small>JPG, PNG, WebP or PDF / 5 MB each / up to 3 files</small>
-            </label>
-          )}
-          {job.status === "Paid" && (
-            <div className="review-action">
-              {data?.ownReview ? (
-                <p>
-                  <Star size={15} />
-                  Your review: {data.ownReview.stars}/5. It becomes public after
-                  both people review or the 14-day window closes.
-                </p>
-              ) : data?.canReview ? (
-                <button
-                  className="button button-primary"
-                  onClick={() => setReviewOpen(true)}
-                >
-                  <Star size={16} />
-                  Review this booking
-                </button>
-              ) : (
-                <p className="privacy-note">
-                  The review window is closed or the booking is still being
-                  confirmed.
-                </p>
-              )}
-            </div>
-          )}
-        </>
+      {disputeVisited && (
+        <div hidden={tab !== "dispute"}>
+          <DisputeCasePanel key={job.id} job={job} />
+        </div>
       )}
+      <div hidden={tab !== "work"} className="booking-work-content">
+        <div className="evidence-heading">
+          <h4>
+            <Paperclip size={16} />
+            Completion evidence
+          </h4>
+          <span>
+            {job.evidenceRequired ? "Required by task owner" : "Optional"}
+          </span>
+        </div>
+        <p className="privacy-note">
+          {job.status === "Funded"
+            ? job.evidenceRequired
+              ? "A photo or document is required before completion."
+              : "Photos and documents are optional."
+            : "Files are kept with this booking's record."}{" "}
+          Private to this booking and its authorized dispute resolver.
+        </p>
+        {job.completion && (
+          <div className="completion-note">
+            <strong>Provider&apos;s completion note</strong>
+            <p>{job.completion}</p>
+          </div>
+        )}
+        <EvidenceUploader
+          booking={job.id}
+          files={data?.evidence ?? []}
+          editable={!job.own && job.status === "Funded" && Boolean(data)}
+          canRemove={!job.own && job.status === "Funded"}
+          lockedLabel={
+            job.status === "Disputed"
+              ? "Case record - locked"
+              : job.completion || job.payment?.reviewDeadline
+                ? "Submitted evidence - locked"
+                : job.status === "Funded"
+                  ? "Uploaded - completion not submitted"
+                  : "Booking attachment"
+          }
+          onRefresh={async () => {
+            await load();
+          }}
+          onPendingChange={setLocalEvidencePending}
+        />
+        {!job.own && job.status === "Funded" && (
+          <p className="evidence-completion-guide">
+            When ready, choose <strong>Submit completion</strong> above. Add
+            your note and approve in your wallet. Uploading alone does not
+            submit the task.
+          </p>
+        )}
+        {job.status === "Paid" && (
+          <div className="review-action">
+            {data?.ownReview ? (
+              <p>
+                <Star size={15} />
+                Your review: {data.ownReview.stars}/5. It becomes public after
+                both people review or the 14-day window closes.
+              </p>
+            ) : data?.canReview ? (
+              <button
+                className="button button-primary"
+                onClick={() => setReviewOpen(true)}
+              >
+                <Star size={16} />
+                Review this booking
+              </button>
+            ) : (
+              <p className="privacy-note">
+                The review window is closed or the booking is still being
+                confirmed.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
       {tab === "messages" && (
         <>
           <div className="booking-messages" aria-label="Booking messages">
@@ -285,7 +284,7 @@ export function BookingExperiencePanel({
           onClose={() => setReviewOpen(false)}
           onSaved={() => {
             setReviewOpen(false);
-            void load().then(setData);
+            void load().catch(() => {});
             onReviewed?.();
           }}
         />

@@ -1,9 +1,10 @@
 import "server-only";
+import { getEscrowConfig, escrowConfigFor } from "./escrow-config";
+export { getEscrowConfig } from "./escrow-config";
 import { randomUUID } from "node:crypto";
 import {
   Contract,
   Networks,
-  StrKey,
   rpc,
   scValToNative,
   nativeToScVal,
@@ -52,25 +53,8 @@ type PaymentIntent = {
   created_at: string;
 };
 
-export function getEscrowConfig() {
-  if (process.env.STELLAR_ESCROW_ENABLED !== "true") return null;
-  const contract = process.env.STELLAR_ESCROW_CONTRACT;
-  const wasmHash = process.env.STELLAR_ESCROW_WASM_HASH;
-  const resolver = process.env.STELLAR_ESCROW_RESOLVER;
-  if (
-    !contract ||
-    !StrKey.isValidContract(contract) ||
-    !wasmHash ||
-    !/^[a-f0-9]{64}$/.test(wasmHash) ||
-    !resolver ||
-    !StrKey.isValidEd25519PublicKey(resolver)
-  )
-    return null;
-  return { contract, wasmHash, resolver };
-}
-
-function configured() {
-  const config = getEscrowConfig();
+function configured(contract?: string) {
+  const config = contract ? escrowConfigFor(contract) : getEscrowConfig();
   if (!config)
     throw new PilotError(
       "Stellar escrow is not configured yet. No payment has been made.",
@@ -115,7 +99,7 @@ async function termsFor(
   if (!data) return null;
   if (data.organizer !== wallet && data.provider !== wallet)
     throw new PilotError("This booking is not available to this wallet.", 403);
-  const config = configured();
+  const config = configured(data.contract_id);
   if (
     data.contract_id !== config.contract ||
     data.token_id !== testUsdcContract ||
@@ -130,7 +114,7 @@ async function termsFor(
 }
 
 export async function chainSnapshot(terms: EscrowTerms) {
-  const config = configured();
+  const config = configured(terms.contract_id);
   const client = server();
   const instanceKey = new Contract(config.contract).getFootprint();
   const bookingKey = bookingLedgerKey(config.contract, terms.chain_id);
@@ -270,12 +254,19 @@ async function rememberProviderPayout(
   snapshot: { booking: ChainBooking | null; ledger: number },
 ) {
   const booking = snapshot.booking;
-  if (!booking || terms.provider_payout_tx
-    || !["Paid", "Refundable"].includes(booking.state[0])
-    || booking.funded <= booking.refund_pool) return;
+  if (
+    !booking ||
+    terms.provider_payout_tx ||
+    !["Paid", "Refundable"].includes(booking.state[0]) ||
+    booking.funded <= booking.refund_pool
+  )
+    return;
   const db = getSupabaseAdmin();
-  const stored = await db.from("campuscrew_stellar_escrows")
-    .select("provider_payout_tx,settlement_tx").eq("request_id", terms.request_id).single();
+  const stored = await db
+    .from("campuscrew_stellar_escrows")
+    .select("provider_payout_tx,settlement_tx")
+    .eq("request_id", terms.request_id)
+    .single();
   // Keep the existing app usable while the payout-receipt migration is applied.
   if (stored.error && ["42703", "PGRST204"].includes(stored.error.code)) return;
   database(stored.error);
@@ -288,8 +279,10 @@ async function rememberProviderPayout(
     const payout = verifyProviderPayout(terms, booking!, hash, result);
     if (!payout) return false;
     const saved = await db.rpc("campuscrew_stellar_record_provider_payout", {
-      p_request_id: terms.request_id, p_hash: payout.hash,
-      p_amount: payout.amount, p_at: payout.at,
+      p_request_id: terms.request_id,
+      p_hash: payout.hash,
+      p_amount: payout.amount,
+      p_at: payout.at,
     });
     database(saved.error);
     return true;
@@ -299,10 +292,19 @@ async function rememberProviderPayout(
   // events, then verify each candidate's exact invocation and token transfer.
   const events = await client.getEvents({
     startLedger: Math.max(1, snapshot.ledger - 100_000),
-    filters: [{ type: "contract", contractIds: [terms.contract_id], topics: [[
-      nativeToScVal("changed", { type: "symbol" }).toXDR("base64"),
-      nativeToScVal(Buffer.from(terms.chain_id, "hex")).toXDR("base64"),
-    ]] }], limit: 100,
+    filters: [
+      {
+        type: "contract",
+        contractIds: [terms.contract_id],
+        topics: [
+          [
+            nativeToScVal("changed", { type: "symbol" }).toXDR("base64"),
+            nativeToScVal(Buffer.from(terms.chain_id, "hex")).toXDR("base64"),
+          ],
+        ],
+      },
+    ],
+    limit: 100,
   });
   for (const event of events.events) {
     if (!event.txHash || candidates.has(event.txHash)) continue;
@@ -317,10 +319,21 @@ export async function prepareEscrow(
   operation: EscrowOperation,
   note?: string,
 ) {
-  const config = configured();
+  let config = configured();
   const db = getSupabaseAdmin();
   let terms = await termsFor(wallet, requestId);
   if (!terms && operation === "create") {
+    const publication = await db
+      .from("campuscrew_task_publications")
+      .select("contract_id")
+      .eq("request_id", requestId)
+      .maybeSingle();
+    if (
+      publication.error &&
+      !["42P01", "PGRST205"].includes(publication.error.code)
+    )
+      database(publication.error);
+    if (publication.data) config = configured(publication.data.contract_id);
     const { data, error } = await db.rpc("campuscrew_stellar_prepare_escrow", {
       p_wallet: wallet,
       p_request_id: requestId,
@@ -535,7 +548,7 @@ export async function enrichEscrowJobs(
     .in("request_id", ids);
   database(error);
   return jobs.map((job) => {
-    if (!job.accepted) return job;
+    if (!job.accepted || job.status === "Removed") return job;
     const row = data?.find((item) => item.request_id === job.id) as
       | EscrowRow
       | undefined;
@@ -543,7 +556,8 @@ export async function enrichEscrowJobs(
       return {
         ...job,
         payment: {
-          fundingTx: null,
+          prefunded: Boolean(job.publication),
+          fundingTx: job.publication?.fundingTx ?? null,
           settlementTx: null,
           refundAfter: null,
           operations: job.own ? ["create"] : [],
@@ -567,7 +581,11 @@ export async function enrichEscrowJobs(
                   : chain!.participants[0].refunded
                     ? "Refunded"
                     : "Refund available"
-                : "Awaiting funding";
+                : row.prefunded
+                  ? state === "Proposed"
+                    ? "Awaiting acceptance"
+                    : "Awaiting assignment"
+                  : "Awaiting funding";
     return {
       ...job,
       status,
@@ -579,9 +597,12 @@ export async function enrichEscrowJobs(
         providerPayoutTx: row.provider_payout_tx ?? null,
         providerPayoutAmount: row.provider_payout_amount ?? undefined,
         providerPayoutAt: row.provider_payout_at ?? null,
-        refundAmount: chain ? Number(chain.refund_pool) / 10_000_000 : undefined,
+        refundAmount: chain
+          ? Number(chain.refund_pool) / 10_000_000
+          : undefined,
         refundAfter: null,
         state: state ?? "Uncreated",
+        prefunded: row.prefunded,
         operations: permittedOperations(
           row,
           chain,
@@ -625,20 +646,36 @@ export async function reconcilePending(wallet?: string) {
     pending: async () => {
       const result = await query;
       database(result.error);
-      return (result.data ?? []).map((row) => ({ requestId: row.request_id, wallet: row.wallet }));
+      return (result.data ?? []).map((row) => ({
+        requestId: row.request_id,
+        wallet: row.wallet,
+      }));
     },
     active: async () => {
       let activeQuery = db
-      .from("campuscrew_stellar_escrows")
-      .select("request_id,organizer")
-      .in("chain_state", ["Proposed", "Funding", "Funded", "Submitted", "Disputed", "Refundable"])
-      .order("checked_ledger")
-      .limit(8);
+        .from("campuscrew_stellar_escrows")
+        .select("request_id,organizer")
+        .in("chain_state", [
+          "Proposed",
+          "Funding",
+          "Funded",
+          "Submitted",
+          "Disputed",
+          "Refundable",
+        ])
+        .order("checked_ledger")
+        .limit(8);
       // A browser can observe only bookings in which its signed wallet participates.
-      if (wallet) activeQuery = activeQuery.or("organizer.eq." + wallet + ",provider.eq." + wallet);
+      if (wallet)
+        activeQuery = activeQuery.or(
+          "organizer.eq." + wallet + ",provider.eq." + wallet,
+        );
       const active = await activeQuery;
       database(active.error);
-      return (active.data ?? []).map((row) => ({ requestId: row.request_id, wallet: wallet ?? row.organizer }));
+      return (active.data ?? []).map((row) => ({
+        requestId: row.request_id,
+        wallet: wallet ?? row.organizer,
+      }));
     },
     sync: syncEscrow,
   });

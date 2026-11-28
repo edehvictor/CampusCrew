@@ -14,6 +14,118 @@ struct Fixture {
     id: BytesN<32>,
 }
 
+#[test]
+fn publication_funds_once_and_owner_can_cancel_for_a_full_refund() {
+    let f = Fixture::new();
+    token::StellarAssetClient::new(&f.env, &f.token).mint(&f.organizer, &100);
+    f.client().publish(&f.id, &f.organizer, &100, &2_000);
+    assert_eq!(f.balance(&f.organizer), 0);
+    assert_eq!(f.balance(&f.contract), 100);
+    assert_eq!(
+        f.client().get_publication(&f.id).state,
+        PublicationState::Open
+    );
+    assert!(f
+        .client()
+        .try_publish(&f.id, &f.organizer, &100, &2_000)
+        .is_err());
+    assert!(f
+        .client()
+        .try_create(
+            &f.id,
+            &f.organizer,
+            &f.provider,
+            &vec![&f.env, (f.organizer.clone(), 100)],
+            &2_000,
+            &10_000
+        )
+        .is_err());
+    f.client().cancel_publication(&f.id);
+    assert_eq!(f.balance(&f.organizer), 100);
+    assert_eq!(f.balance(&f.contract), 0);
+    assert!(f.client().try_cancel_publication(&f.id).is_err());
+    assert!(f
+        .client()
+        .try_assign(&f.id, &f.provider, &60, &10_000)
+        .is_err());
+}
+
+#[test]
+fn publication_assignment_returns_unused_budget_and_does_not_charge_twice() {
+    let f = Fixture::new();
+    token::StellarAssetClient::new(&f.env, &f.token).mint(&f.organizer, &100);
+    f.client().publish(&f.id, &f.organizer, &100, &2_000);
+    f.client().assign(&f.id, &f.provider, &60, &10_000);
+    assert_eq!(f.balance(&f.organizer), 40);
+    assert_eq!(f.balance(&f.contract), 60);
+    let booking = f.client().get_booking(&f.id);
+    assert_eq!(booking.state, State::Proposed);
+    assert_eq!(booking.funded, 60);
+    assert!(booking.participants.get(0).unwrap().paid);
+    f.client().accept(&f.id);
+    assert_eq!(f.client().get_booking(&f.id).state, State::Funded);
+    assert!(f.client().try_contribute(&f.id, &f.organizer).is_err());
+    f.client().submit(&f.id);
+    f.client().release(&f.id);
+    assert_eq!(f.balance(&f.provider), 60);
+    assert_eq!(f.balance(&f.organizer), 40);
+    assert_eq!(f.balance(&f.contract), 0);
+}
+
+#[test]
+fn publication_rejects_over_budget_quotes_invalid_roles_and_expired_assignment() {
+    let f = Fixture::new();
+    token::StellarAssetClient::new(&f.env, &f.token).mint(&f.organizer, &100);
+    f.client().publish(&f.id, &f.organizer, &100, &2_000);
+    assert!(f
+        .client()
+        .try_assign(&f.id, &f.provider, &101, &10_000)
+        .is_err());
+    assert!(f
+        .client()
+        .try_assign(&f.id, &f.organizer, &60, &10_000)
+        .is_err());
+    assert!(f
+        .client()
+        .try_assign(&f.id, &f.resolver, &60, &10_000)
+        .is_err());
+    f.env.ledger().set_timestamp(2_000);
+    assert!(f
+        .client()
+        .try_assign(&f.id, &f.provider, &60, &10_000)
+        .is_err());
+    f.client().cancel_publication(&f.id);
+    assert_eq!(f.balance(&f.organizer), 100);
+}
+
+#[test]
+fn assigned_publication_cannot_be_reused_and_booking_cancellation_refunds_its_deposit() {
+    let f = Fixture::new();
+    token::StellarAssetClient::new(&f.env, &f.token).mint(&f.organizer, &100);
+    f.client().publish(&f.id, &f.organizer, &100, &2_000);
+    f.client().assign(&f.id, &f.provider, &100, &10_000);
+    assert!(f
+        .client()
+        .try_assign(&f.id, &f.provider, &100, &10_000)
+        .is_err());
+    assert!(f.client().try_cancel_publication(&f.id).is_err());
+    f.client().cancel(&f.id, &f.organizer);
+    f.client().refund(&f.id, &f.organizer);
+    assert_eq!(f.balance(&f.organizer), 100);
+    assert_eq!(f.balance(&f.provider), 0);
+}
+
+#[test]
+fn failed_publication_does_not_leave_a_listing_or_take_tokens() {
+    let f = Fixture::new();
+    assert!(f
+        .client()
+        .try_publish(&f.id, &f.organizer, &100, &2_000)
+        .is_err());
+    assert!(f.client().try_get_publication(&f.id).is_err());
+    assert_eq!(f.balance(&f.contract), 0);
+}
+
 impl Fixture {
     fn new() -> Self {
         let env = Env::default();
@@ -439,4 +551,37 @@ fn failed_token_transfer_rolls_back_contribution_state() {
     assert_eq!(booking.funded, 0);
     assert!(!booking.participants.get(0).unwrap().paid);
     assert_eq!(booking.state, State::Funding);
+}
+#[test]
+fn publication_and_assignment_require_owner_signatures_and_preserve_other_deposits() {
+    let f = Fixture::new();
+    token::StellarAssetClient::new(&f.env, &f.token).mint(&f.organizer, &200);
+    f.env.set_auths(&[]);
+    assert!(f
+        .client()
+        .try_publish(&f.id, &f.organizer, &100, &2_000)
+        .is_err());
+    f.env.mock_all_auths();
+    f.client().publish(&f.id, &f.organizer, &100, &2_000);
+    let second = BytesN::from_array(&f.env, &[2; 32]);
+    f.client().publish(&second, &f.organizer, &100, &2_000);
+    f.env.set_auths(&[]);
+    assert!(f
+        .client()
+        .try_assign(&f.id, &f.provider, &60, &10_000)
+        .is_err());
+    assert!(f.client().try_cancel_publication(&f.id).is_err());
+    assert_eq!(f.balance(&f.contract), 200);
+    f.env.mock_all_auths();
+    f.client().assign(&f.id, &f.provider, &60, &10_000);
+    f.client().accept(&f.id);
+    f.client().submit(&f.id);
+    f.client().dispute(&f.id, &f.organizer);
+    f.client().resolve(&f.id, &30);
+    f.client().refund(&f.id, &f.organizer);
+    assert_eq!(f.balance(&f.provider), 30);
+    assert_eq!(f.balance(&f.contract), 100);
+    f.client().cancel_publication(&second);
+    assert_eq!(f.balance(&f.organizer), 170);
+    assert_eq!(f.balance(&f.contract), 0);
 }

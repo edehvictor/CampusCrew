@@ -1,4 +1,5 @@
 import "server-only";
+import { supportedEscrowContracts } from "./escrow-config";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { PilotError } from "../pilot-error";
 import { isResolverWallet } from "../auth/resolver-access";
@@ -28,7 +29,7 @@ export function requireResolver(wallet: string | undefined) {
 }
 
 export async function resolverTerms(wallet: string, id: string) {
-  const config = requireResolver(wallet);
+  requireResolver(wallet);
   const r = await getSupabaseAdmin()
     .from("campuscrew_stellar_escrows")
     .select("*")
@@ -38,7 +39,7 @@ export async function resolverTerms(wallet: string, id: string) {
   if (
     !r.data ||
     r.data.resolver !== wallet ||
-    r.data.contract_id !== config.contract
+    !supportedEscrowContracts().includes(r.data.contract_id)
   )
     throw new PilotError("This case is not assigned to this resolver.", 403);
   return r.data;
@@ -97,7 +98,8 @@ export async function readDispute(
             .limit(1),
       db
         .from("campuscrew_booking_evidence")
-        .select("id,name,uploader,created_at")
+        .select("id,name,mime,bytes,uploader,created_at")
+        .is("removed_at", null)
         .eq("request_id", id)
         .order("created_at"),
       db
@@ -192,13 +194,13 @@ export async function readDispute(
 }
 
 export async function disputeQueue(wallet: string) {
-  const config = requireResolver(wallet),
-    db = getSupabaseAdmin();
+  requireResolver(wallet);
+  const db = getSupabaseAdmin();
   const active = await db
     .from("campuscrew_stellar_escrows")
     .select("request_id")
     .eq("resolver", wallet)
-    .eq("contract_id", config.contract)
+    .in("contract_id", supportedEscrowContracts())
     .eq("chain_state", "Disputed")
     .limit(50);
   disputeError(active.error);
@@ -228,7 +230,7 @@ export async function disputeQueue(wallet: string) {
       .select("request_id,amount,chain_state")
       .in("request_id", ids)
       .eq("resolver", wallet)
-      .eq("contract_id", config.contract),
+      .in("contract_id", supportedEscrowContracts()),
     db.from("campuscrew_stellar_tasks").select("id,title").in("id", ids),
   ]);
   disputeError(escrows.error);

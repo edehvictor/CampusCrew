@@ -23,6 +23,14 @@ export type ActivityNotification = {
   created_at: string;
   read_at: string | null;
 };
+export type EvidenceAttachment = {
+  id: string;
+  name: string;
+  mime: string;
+  bytes?: number;
+  created_at: string;
+  mine?: boolean;
+};
 export type BookingExperience = {
   events: { id: string; label: string; created_at: string }[];
   messages: {
@@ -32,7 +40,7 @@ export type BookingExperience = {
     created_at: string;
     name: string;
   }[];
-  evidence: { id: string; name: string; mime: string; created_at: string }[];
+  evidence: EvidenceAttachment[];
   canReview: boolean;
   ownReview: { stars: number; comment: string } | null;
 };

@@ -18,6 +18,35 @@ enum Key {
     Token,
     Resolver,
     Booking(BytesN<32>),
+    Publication(BytesN<32>),
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum PublicationState {
+    Open,
+    Assigned,
+    Cancelled,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Publication {
+    pub organizer: Address,
+    pub budget: i128,
+    pub expires_at: u64,
+    pub state: PublicationState,
+}
+
+#[contractevent]
+#[derive(Clone)]
+pub struct PublicationChanged {
+    #[topic]
+    pub task: BytesN<32>,
+    pub organizer: Address,
+    pub budget: i128,
+    pub returned: i128,
+    pub state: PublicationState,
 }
 
 #[contracttype]
@@ -132,6 +161,32 @@ fn transfer(env: &Env, from: &Address, to: &Address, amount: i128) {
     }
 }
 
+fn save_publication(env: &Env, id: &BytesN<32>, value: &Publication, returned: i128) {
+    let key = Key::Publication(id.clone());
+    env.storage().persistent().set(&key, value);
+    env.storage()
+        .persistent()
+        .extend_ttl(&key, TTL_THRESHOLD, TTL_EXTEND);
+    env.storage()
+        .instance()
+        .extend_ttl(TTL_THRESHOLD, TTL_EXTEND);
+    PublicationChanged {
+        task: id.clone(),
+        organizer: value.organizer.clone(),
+        budget: value.budget,
+        returned,
+        state: value.state.clone(),
+    }
+    .publish(env);
+}
+
+fn load_publication(env: &Env, id: &BytesN<32>) -> Publication {
+    env.storage()
+        .persistent()
+        .get(&Key::Publication(id.clone()))
+        .unwrap_or_else(|| panic_with_error!(env, Error::Missing))
+}
+
 fn is_participant(booking: &Booking, wallet: &Address) -> bool {
     booking
         .participants
@@ -155,6 +210,75 @@ fn payout(env: &Env, id: &BytesN<32>, mut booking: Booking, provider_amount: i12
     );
 }
 
+fn create_booking(
+    env: Env,
+    id: BytesN<32>,
+    organizer: Address,
+    provider: Address,
+    contributions: Vec<(Address, i128)>,
+    funding_deadline: u64,
+    work_deadline: u64,
+) {
+    organizer.require_auth();
+    if env.storage().persistent().has(&Key::Booking(id.clone())) {
+        panic_with_error!(&env, Error::Exists);
+    }
+    let now = env.ledger().timestamp();
+    let resolver = CampusCrewEscrow::resolver(env.clone());
+    if organizer == provider
+        || resolver == provider
+        || resolver == organizer
+        || contributions.is_empty()
+        || contributions.len() > MAX_PARTICIPANTS
+        || funding_deadline <= now
+        || funding_deadline > now + 7 * DAY
+        || work_deadline <= funding_deadline
+        || work_deadline > now + 30 * DAY
+    {
+        panic_with_error!(&env, Error::InvalidTerms);
+    }
+    let mut participants = Vec::new(&env);
+    let mut total = 0_i128;
+    for (wallet, amount) in contributions.iter() {
+        if wallet == provider
+            || wallet == resolver
+            || amount <= 0
+            || amount > MAX_AMOUNT
+            || participants
+                .iter()
+                .any(|share: Share| share.wallet == wallet)
+        {
+            panic_with_error!(&env, Error::InvalidTerms);
+        }
+        total += amount;
+        if total > MAX_AMOUNT {
+            panic_with_error!(&env, Error::InvalidTerms);
+        }
+        participants.push_back(Share {
+            wallet,
+            amount,
+            paid: false,
+            refunded: false,
+        });
+    }
+    let booking = Booking {
+        organizer: organizer.clone(),
+        provider,
+        participants,
+        total,
+        funded: 0,
+        funding_deadline,
+        work_deadline,
+        review_deadline: 0,
+        refund_pool: 0,
+        state: State::Proposed,
+    };
+    if !is_participant(&booking, &organizer) {
+        panic_with_error!(&env, Error::InvalidTerms);
+    }
+    save(&env, &id, &booking);
+}
+
 #[contractimpl]
 impl CampusCrewEscrow {
     pub fn __constructor(env: Env, token: Address, resolver: Address) {
@@ -170,6 +294,106 @@ impl CampusCrewEscrow {
         env.storage().instance().get(&Key::Resolver).unwrap()
     }
 
+    // Funding happens before a provider is known. A task ID may be funded once;
+    // duplicate or cancelled IDs cannot silently become a second deposit.
+    pub fn publish(env: Env, id: BytesN<32>, organizer: Address, budget: i128, expires_at: u64) {
+        organizer.require_auth();
+        let now = env.ledger().timestamp();
+        if env
+            .storage()
+            .persistent()
+            .has(&Key::Publication(id.clone()))
+            || env.storage().persistent().has(&Key::Booking(id.clone()))
+        {
+            panic_with_error!(&env, Error::Exists);
+        }
+        if organizer == Self::resolver(env.clone())
+            || budget <= 0
+            || budget > MAX_AMOUNT
+            || expires_at <= now
+            || expires_at > now + 7 * DAY
+        {
+            panic_with_error!(&env, Error::InvalidTerms);
+        }
+        let value = Publication {
+            organizer: organizer.clone(),
+            budget,
+            expires_at,
+            state: PublicationState::Open,
+        };
+        save_publication(&env, &id, &value, 0);
+        transfer(&env, &organizer, &env.current_contract_address(), budget);
+    }
+
+    // Move the reserved amount into a booking without charging the owner again.
+    // Any difference goes back to the owner in the same atomic transaction.
+    pub fn assign(env: Env, id: BytesN<32>, provider: Address, amount: i128, work_deadline: u64) {
+        let mut publication = load_publication(&env, &id);
+        publication.organizer.require_auth();
+        let now = env.ledger().timestamp();
+        if publication.state != PublicationState::Open {
+            panic_with_error!(&env, Error::InvalidState);
+        }
+        if now >= publication.expires_at {
+            panic_with_error!(&env, Error::DeadlinePassed);
+        }
+        if amount <= 0 || amount > publication.budget {
+            panic_with_error!(&env, Error::InvalidTerms);
+        }
+        create_booking(
+            env.clone(),
+            id.clone(),
+            publication.organizer.clone(),
+            provider,
+            soroban_sdk::vec![&env, (publication.organizer.clone(), amount)],
+            publication.expires_at,
+            work_deadline,
+        );
+        let mut booking = load(&env, &id);
+        let mut share = booking.participants.get(0).unwrap();
+        share.paid = true;
+        booking.participants.set(0, share);
+        booking.funded = amount;
+        save(&env, &id, &booking);
+        publication.state = PublicationState::Assigned;
+        let unused = publication.budget - amount;
+        save_publication(&env, &id, &publication, unused);
+        transfer(
+            &env,
+            &env.current_contract_address(),
+            &publication.organizer,
+            unused,
+        );
+    }
+
+    pub fn cancel_publication(env: Env, id: BytesN<32>) {
+        let mut publication = load_publication(&env, &id);
+        publication.organizer.require_auth();
+        if publication.state != PublicationState::Open {
+            panic_with_error!(&env, Error::InvalidState);
+        }
+        publication.state = PublicationState::Cancelled;
+        save_publication(&env, &id, &publication, publication.budget);
+        transfer(
+            &env,
+            &env.current_contract_address(),
+            &publication.organizer,
+            publication.budget,
+        );
+    }
+
+    pub fn get_publication(env: Env, id: BytesN<32>) -> Publication {
+        let publication = load_publication(&env, &id);
+        let key = Key::Publication(id);
+        env.storage()
+            .persistent()
+            .extend_ttl(&key, TTL_THRESHOLD, TTL_EXTEND);
+        env.storage()
+            .instance()
+            .extend_ttl(TTL_THRESHOLD, TTL_EXTEND);
+        publication
+    }
+
     pub fn create(
         env: Env,
         id: BytesN<32>,
@@ -179,64 +403,22 @@ impl CampusCrewEscrow {
         funding_deadline: u64,
         work_deadline: u64,
     ) {
-        organizer.require_auth();
-        if env.storage().persistent().has(&Key::Booking(id.clone())) {
+        if env
+            .storage()
+            .persistent()
+            .has(&Key::Publication(id.clone()))
+        {
             panic_with_error!(&env, Error::Exists);
         }
-        let now = env.ledger().timestamp();
-        let resolver = Self::resolver(env.clone());
-        if organizer == provider
-            || resolver == provider
-            || resolver == organizer
-            || contributions.is_empty()
-            || contributions.len() > MAX_PARTICIPANTS
-            || funding_deadline <= now
-            || funding_deadline > now + 7 * DAY
-            || work_deadline <= funding_deadline
-            || work_deadline > now + 30 * DAY
-        {
-            panic_with_error!(&env, Error::InvalidTerms);
-        }
-        let mut participants = Vec::new(&env);
-        let mut total = 0_i128;
-        for (wallet, amount) in contributions.iter() {
-            if wallet == provider
-                || wallet == resolver
-                || amount <= 0
-                || amount > MAX_AMOUNT
-                || participants
-                    .iter()
-                    .any(|share: Share| share.wallet == wallet)
-            {
-                panic_with_error!(&env, Error::InvalidTerms);
-            }
-            total += amount;
-            if total > MAX_AMOUNT {
-                panic_with_error!(&env, Error::InvalidTerms);
-            }
-            participants.push_back(Share {
-                wallet,
-                amount,
-                paid: false,
-                refunded: false,
-            });
-        }
-        let booking = Booking {
-            organizer: organizer.clone(),
+        create_booking(
+            env,
+            id,
+            organizer,
             provider,
-            participants,
-            total,
-            funded: 0,
+            contributions,
             funding_deadline,
             work_deadline,
-            review_deadline: 0,
-            refund_pool: 0,
-            state: State::Proposed,
-        };
-        if !is_participant(&booking, &organizer) {
-            panic_with_error!(&env, Error::InvalidTerms);
-        }
-        save(&env, &id, &booking);
+        );
     }
 
     pub fn accept(env: Env, id: BytesN<32>) {
@@ -248,7 +430,11 @@ impl CampusCrewEscrow {
         if env.ledger().timestamp() >= booking.funding_deadline {
             panic_with_error!(&env, Error::DeadlinePassed);
         }
-        booking.state = State::Funding;
+        booking.state = if booking.funded == booking.total {
+            State::Funded
+        } else {
+            State::Funding
+        };
         save(&env, &id, &booking);
     }
 

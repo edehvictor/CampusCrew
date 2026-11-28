@@ -335,6 +335,18 @@ a.application-name:hover { text-decoration: underline; }
 }
 .request-dialog textarea { resize: vertical; }
 .request-dialog .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.request-form-fields { display:grid; gap:12px; margin:0; padding:0; border:0; min-width:0; }
+.request-dialog .profile-check { display:flex; align-items:flex-start; gap:9px; font-size:12px; line-height:1.6; }
+.request-dialog .profile-check input { flex:0 0 auto; width:16px; height:16px; min-height:0; padding:0; margin:2px 0 0; accent-color:var(--primary); }
+.edit-form-intro { color:var(--muted); font-size:12px; line-height:1.7; }
+.edit-task-context { padding:12px; border:1px solid var(--line); border-radius:9px; background:var(--background); font-size:12px; color:var(--muted); }
+.edit-task-context summary { color:var(--primary-ink); cursor:pointer; font-weight:700; }
+.edit-task-context > strong { display:block; margin-top:12px; color:var(--ink); }
+.edit-task-context p { white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.7; margin-top:8px; }
+.edit-task-button { margin-top:12px; font-size:12px; }
+.task-edit-time, .application-edit-time { display:block; margin-top:9px; color:var(--muted); font-size:10px; }
+.task-changed-notice { color:#78501a; background:#fbf1de; padding:12px; border-radius:9px; font-size:12px; line-height:1.7; }
+.application-edit-actions { display:grid; gap:12px; margin-top:12px; justify-items:start; }
 
 @media (max-width: 760px) {
   .book-one { padding: 15px 13px 25px; }
@@ -364,3 +376,16 @@ a.application-name:hover { text-decoration: underline; }
 .provider-quote { flex-wrap: wrap; }
   .quote-action { justify-items: start; }
 }
+
+.publication-recovery { border:1px solid #dedbee; border-radius:16px; background:white; padding:20px; margin:18px 0; }
+.publication-recovery h2 { font-size:18px; margin:0 0 8px; }
+.publication-recovery p, .funded-task-note { font-size:14px; line-height:1.7; color:#5c5773; }
+.publication-recovery > div { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 0; border-top:1px solid #eeecf5; }
+.publication-recovery small { display:block; margin-top:5px; }
+.funded-task-note { padding:14px 18px; background:#f0eefb; border-radius:12px; }
+.funded-task-note a { font-weight:600; text-decoration:underline; }
+@media(max-width:600px) { .publication-recovery > div { align-items:flex-start; flex-direction:column; } }
+
+.application-person { display:flex; align-items:flex-start; gap:9px; min-width:0; }
+.application-person > div { min-width:0; }
+.application-person .avatar { margin-top:2px; }

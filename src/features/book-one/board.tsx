@@ -56,7 +56,18 @@ const viewCopy: Record<View, { title: string; introduction: string }> = {
   },
 };
 
+import type {
+  PublicationRecovery,
+  PublicationResult,
+} from "./types/publication";
 export type LiveBoardActions = {
+  fundedPostingEnabled: boolean;
+  publications: PublicationRecovery[];
+  publish: (
+    draft: Extract<PilotMutation, { action: "post" }>,
+  ) => Promise<PublicationResult>;
+  cancelTask: (id: string) => Promise<PublicationResult>;
+  checkPublication: (id: string) => Promise<PublicationResult>;
   jobs: Job[];
   sessionReady: boolean;
   wallet?: string;
@@ -104,6 +115,8 @@ export function BookOneBoard({ live }: { live: LiveBoardActions }) {
   const boardRef = useRef<HTMLDivElement>(null);
   const writeInProgress = useRef(false);
   const draftId = useRef<string | null>(null);
+  // Capture what was reviewed when the form opened, not a later background snapshot.
+  const [draftJob, setDraftJob] = useState<Job | null>(null);
 
   useEffect(() => {
     if (!live.resume) return;
@@ -121,6 +134,11 @@ export function BookOneBoard({ live }: { live: LiveBoardActions }) {
         )
       ) {
         draftId.current = crypto.randomUUID();
+        setDraftJob(
+          intent.kind === "quote"
+            ? (live.jobs.find((job) => job.id === intent.requestId) ?? null)
+            : null,
+        );
         setDialog(intent.kind);
       } else {
         setError("This task is no longer accepting applications.");
@@ -139,20 +157,30 @@ export function BookOneBoard({ live }: { live: LiveBoardActions }) {
         (statusFilter === "completed"
           ? job.status === "Paid"
           : statusFilter === "closed"
-            ? ["Cancelled", "Refunded", "Refund available"].includes(job.status)
-            : !["Paid", "Cancelled", "Refunded", "Refund available"].includes(
+            ? ["Cancelled", "Refunded", "Refund available", "Removed"].includes(
                 job.status,
-              ))) &&
+              )
+            : ![
+                "Paid",
+                "Cancelled",
+                "Refunded",
+                "Refund available",
+                "Removed",
+              ].includes(job.status))) &&
       (view !== "Sent applications" ||
         statusFilter === "all" ||
         (statusFilter === "selected"
           ? job.quotes.some((q) => q.own && q.id === job.accepted)
           : statusFilter === "pending"
-            ? job.status === "Open"
-            : Boolean(
-                job.status !== "Open" &&
+            ? job.status === "Open" &&
+              job.quotes.some((q) => q.own && !q.withdrawnAt)
+            : statusFilter === "withdrawn"
+              ? job.quotes.some((q) => q.own && Boolean(q.withdrawnAt))
+              : Boolean(
+                  job.status !== "Open" &&
+                  !job.quotes.some((q) => q.own && q.withdrawnAt) &&
                   !job.quotes.some((q) => q.own && q.id === job.accepted),
-              ))) &&
+                ))) &&
       (!filters.category || job.category === filters.category) &&
       (!filters.area || job.area === filters.area) &&
       [job.title, job.scope, job.category]
@@ -168,7 +196,6 @@ export function BookOneBoard({ live }: { live: LiveBoardActions }) {
     router.push(pageHref(next, jobId));
     setFilters(emptyFilters);
     setMobileDetails(Boolean(jobId));
-    setNotice("");
     setError("");
   }
 
@@ -205,7 +232,20 @@ export function BookOneBoard({ live }: { live: LiveBoardActions }) {
     if (kind === "post" && !live.prepare({ kind })) return;
     if (kind === "quote" && (!requestId || !live.prepare({ kind, requestId })))
       return;
+    if (
+      kind === "edit-task" &&
+      (!selected?.own || selected.status !== "Open" || !selected.revision)
+    )
+      return;
+    if (
+      kind === "edit-application" &&
+      (selected?.status !== "Open" ||
+        !selected.revision ||
+        !selected.quotes.some((q) => q.own && q.revision))
+    )
+      return;
     draftId.current = crypto.randomUUID();
+    setDraftJob(kind === "post" ? null : (selected ?? null));
     setDialog(kind);
   }
 
@@ -235,9 +275,15 @@ export function BookOneBoard({ live }: { live: LiveBoardActions }) {
         action: "select",
         requestId: job.id,
         applicationId: quote.id,
+        taskRevision: job.revision,
+        applicationRevision: quote.revision,
       });
       navigate("Bookings", job.id);
-      setNotice("Provider selected. Review the booking before funding.");
+      setNotice(
+        job.publication
+          ? "Provider selected. Confirm the assignment to return any unused budget, then the provider accepts."
+          : "Provider selected. Review the booking before funding.",
+      );
     });
   }
 
@@ -246,6 +292,7 @@ export function BookOneBoard({ live }: { live: LiveBoardActions }) {
     const form = new FormData(event.currentTarget);
     const field = (name: string) => String(form.get(name) ?? "").trim();
     const amount = Number(field("amount"));
+    const task = draftJob;
     if (
       dialog !== "complete" &&
       (!Number.isFinite(amount) || amount < 0.01 || amount > 1000000)
@@ -253,7 +300,7 @@ export function BookOneBoard({ live }: { live: LiveBoardActions }) {
       return;
 
     void run(async () => {
-      if (dialog === "post") {
+      if (dialog === "post" || dialog === "edit-task") {
         const title = field("title");
         const scope = field("scope");
         const timing = field("timing");
@@ -261,9 +308,12 @@ export function BookOneBoard({ live }: { live: LiveBoardActions }) {
         const area = pilotAreas.find((item) => item === field("area"));
         if (!title || !scope || !timing || !category || !area)
           throw new Error("Fill in the task details.");
-        const id = draftId.current ?? crypto.randomUUID();
-        await live.mutate({
-          action: "post",
+        const id =
+          dialog === "edit-task"
+            ? task?.id
+            : (draftId.current ?? crypto.randomUUID());
+        if (!id) throw new Error("Close the editor and open the task again.");
+        const values = {
           requestId: id,
           title,
           scope,
@@ -272,32 +322,112 @@ export function BookOneBoard({ live }: { live: LiveBoardActions }) {
           area,
           budget: amount,
           evidenceRequired: form.get("evidenceRequired") === "on",
-        });
+        };
+        if (dialog === "edit-task") {
+          if (!task?.revision)
+            throw new Error("Refresh the task before editing.");
+          await live.mutate({
+            action: "edit-task",
+            revision: task.revision,
+            ...values,
+          });
+        } else {
+          const result = await live.publish({ action: "post", ...values });
+          if (!result.confirmed) {
+            setDialog(null);
+            navigate("Posted tasks");
+            setNotice(result.message);
+            return;
+          }
+        }
         navigate("Posted tasks", id);
-        setNotice("Task posted.");
-      } else if (dialog === "quote" && selected) {
+        setNotice(
+          dialog === "edit-task"
+            ? "Task updated. Existing applicants must review the changes before selection."
+            : "Task funded and published.",
+        );
+      } else if (
+        (dialog === "quote" || dialog === "edit-application") &&
+        task
+      ) {
+        if (task.publication && amount > task.budget)
+          throw new Error("Your quote cannot exceed the funded budget.");
         const availability = field("availability");
         const note = field("note");
         if (!availability || !note)
           throw new Error("Add your availability and what you can do.");
-        await live.mutate({
-          action: "apply",
-          requestId: selected.id,
+        const values = {
+          requestId: task.id,
+          taskRevision: task.revision,
           amount,
           availability,
           note,
-        });
-        navigate("Sent applications", selected.id);
-        setNotice("Application sent.");
-      } else if (dialog === "complete" && selected) {
+        };
+        if (dialog === "edit-application") {
+          const quote = task.quotes.find((q) => q.own);
+          if (!quote?.revision || !task.revision)
+            throw new Error("Refresh the task before editing.");
+          await live.mutate({
+            ...values,
+            action: "edit-application",
+            applicationId: quote.id,
+            revision: quote.revision,
+            taskRevision: task.revision,
+          });
+        } else await live.mutate({ ...values, action: "apply" });
+        navigate("Sent applications", task.id);
+        setNotice(
+          dialog === "edit-application"
+            ? "Application updated for the current task."
+            : "Application sent.",
+        );
+      } else if (dialog === "complete" && task) {
         const note = field("note");
         if (!note) throw new Error("Add your completion note.");
-        setNotice(await live.pay(selected.id, "submit", note));
+        setNotice(await live.pay(task.id, "submit", note));
       }
       setDialog(null);
     });
   }
 
+  function removeTask(job: Job) {
+    if (
+      !window.confirm(
+        job.publication
+          ? "Remove this task and return its full reserved budget? Approve the refund in your wallet. The task stays in private history."
+          : "Remove this task? It will close applications and remain in your private history.",
+      )
+    )
+      return;
+    void run(async () => {
+      if (job.publication) {
+        const result = await live.cancelTask(job.id);
+        setNotice(result.message);
+      } else {
+        await live.mutate({ action: "remove-task", requestId: job.id });
+        setNotice("Task removed.");
+      }
+    });
+  }
+  function withdraw(job: Job) {
+    const q = job.quotes.find((q) => q.own);
+    if (
+      !q?.revision ||
+      !window.confirm(
+        "Withdraw your application? The task owner will no longer be able to select it.",
+      )
+    )
+      return;
+    void run(async () => {
+      await live.mutate({
+        action: "withdraw",
+        requestId: job.id,
+        applicationId: q.id,
+        revision: q.revision!,
+      });
+      setNotice("Application withdrawn.");
+    });
+  }
   function dismissDialog() {
     if (!writeInProgress.current) {
       setError("");
@@ -379,6 +509,44 @@ export function BookOneBoard({ live }: { live: LiveBoardActions }) {
           </header>
           {live.banner}
           <CampusSelector />
+          {!!live.publications.length && (
+            <section
+              className="publication-recovery"
+              aria-label="Pending funding approvals"
+            >
+              <h2>Funding approvals</h2>
+              <p>
+                Check an approval before trying again. An unconfirmed deposit
+                does not publish a task.
+              </p>
+              {live.publications.map((intent) => (
+                <div key={intent.id}>
+                  <span>
+                    <strong>{intent.title}</strong>
+                    <small>
+                      {intent.status === "prepared"
+                        ? "Wallet approval prepared; no confirmation yet"
+                        : intent.operation === "cancel"
+                          ? "Refund awaiting confirmation"
+                          : "Publication awaiting confirmation"}
+                    </small>
+                  </span>
+                  <button
+                    className="button button-secondary"
+                    disabled={busy}
+                    onClick={() => {
+                      void run(async () => {
+                        const r = await live.checkPublication(intent.id);
+                        setNotice(r.message);
+                      });
+                    }}
+                  >
+                    Check {intent.operation === "cancel" ? "refund" : "funding"}
+                  </button>
+                </div>
+              ))}
+            </section>
+          )}
           {(view === "Bookings" || view === "Sent applications") && (
             <div
               className="experience-tabs"
@@ -399,6 +567,7 @@ export function BookOneBoard({ live }: { live: LiveBoardActions }) {
                     ["pending", "Pending"],
                     ["selected", "Selected"],
                     ["not-selected", "Not selected"],
+                    ["withdrawn", "Withdrawn"],
                   ]
               ).map(([value, label]) => (
                 <button
@@ -448,11 +617,16 @@ export function BookOneBoard({ live }: { live: LiveBoardActions }) {
             />
             {selected ? (
               <RequestDetail
+                key={selected.id}
                 job={selected}
                 onBack={returnToList}
                 onAccept={(quote) => acceptQuote(selected, quote)}
                 onQuote={() => openDialog("quote", selected.id)}
                 onComplete={() => openDialog("complete")}
+                onRemoveTask={() => removeTask(selected)}
+                onWithdraw={() => withdraw(selected)}
+                onEditTask={() => openDialog("edit-task")}
+                onEditApplication={() => openDialog("edit-application")}
                 busy={busy}
                 wallet={live.wallet}
                 experienceReady={live.experienceReady}
@@ -485,7 +659,14 @@ export function BookOneBoard({ live }: { live: LiveBoardActions }) {
         <RequestDialog
           key={dialog}
           kind={dialog}
-          evidenceRequired={selected?.evidenceRequired}
+          fundedPostingEnabled={live.fundedPostingEnabled}
+          evidenceRequired={draftJob?.evidenceRequired}
+          initialJob={draftJob ?? undefined}
+          initialQuote={
+            dialog === "edit-application"
+              ? draftJob?.quotes.find((q) => q.own)
+              : undefined
+          }
           areas={pilotAreas}
           busy={busy}
           error={error}

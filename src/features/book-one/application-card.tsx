@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { Check, Clock3 } from "lucide-react";
-import { ReputationLine } from "./experience-pages";
+import { ReputationLine } from "./reputation-line";
 import { price, type Quote } from "./model";
 
 export function ApplicationCard({
@@ -9,12 +10,14 @@ export function ApplicationCard({
   busy,
   onSelect,
   showReputation = true,
+  needsReview = false,
 }: {
   quote: Quote;
   selected?: boolean;
   busy?: boolean;
   onSelect?: (quote: Quote) => void;
   showReputation?: boolean;
+  needsReview?: boolean;
 }) {
   return (
     <article
@@ -23,22 +26,30 @@ export function ApplicationCard({
       aria-label={`${quote.provider}'s application`}
     >
       <header className="application-card-header">
-        <div>
-          {quote.profileId ? (
-            <Link
-              className="application-name"
-              href={"/providers/" + quote.profileId}
-            >
-              {quote.provider}
-            </Link>
-          ) : (
-            <strong className="application-name">{quote.provider}</strong>
-          )}
-          {selected && (
-            <span className="application-selected">
-              <Check size={14} aria-hidden="true" /> Selected
-            </span>
-          )}
+        <div className="application-person">
+          <UserAvatar className="avatar-small" />
+          <div>
+            {quote.profileId ? (
+              <Link
+                className="application-name"
+                href={"/providers/" + quote.profileId}
+              >
+                {quote.provider}
+              </Link>
+            ) : (
+              <strong className="application-name">{quote.provider}</strong>
+            )}
+            {quote.withdrawnAt && (
+              <span className="status" data-tone="neutral">
+                Withdrawn
+              </span>
+            )}
+            {selected && (
+              <span className="application-selected">
+                <Check size={14} aria-hidden="true" /> Selected
+              </span>
+            )}
+          </div>
         </div>
         <strong className="application-price">{price(quote.amount)}</strong>
       </header>
@@ -48,6 +59,16 @@ export function ApplicationCard({
         {quote.availability}
       </p>
       <p className="quote-note application-message">{quote.note}</p>
+      {needsReview && (
+        <p className="task-changed-notice">
+          Awaiting this applicant’s confirmation of the updated task.
+        </p>
+      )}
+      {quote.updatedAt && (
+        <small className="application-edit-time">
+          Offer updated {new Date(quote.updatedAt).toLocaleString()}
+        </small>
+      )}
       {(quote.bio || quote.skills?.length || quote.coverage?.length) && (
         <details className="application-background">
           <summary>Services & coverage</summary>
@@ -58,7 +79,7 @@ export function ApplicationCard({
           )}
         </details>
       )}
-      {onSelect && !selected && (
+      {onSelect && !selected && !quote.withdrawnAt && (
         <footer className="application-card-footer">
           {quote.profileId && (
             <Link
@@ -71,7 +92,7 @@ export function ApplicationCard({
           <button
             className="button button-primary"
             type="button"
-            disabled={busy}
+            disabled={busy || needsReview}
             onClick={() => onSelect(quote)}
           >
             Select provider

@@ -1,0 +1,468 @@
+.home-page > .home-hero {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+/* Two matching pairs of mirrored sky panels create a seamless, one-way loop. */
+.home-hero > .hero-atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.hero-sky {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: flex;
+  width: 400%;
+  height: 100%;
+  opacity: 0.88;
+  will-change: transform;
+  animation: crew-sky-scroll 160s linear infinite;
+}
+.hero-sky-panel {
+  display: block;
+  flex: 0 0 25%;
+  height: 100%;
+  background: #8db6e6 url("/hero/campus-sky.png") center / cover no-repeat;
+}
+.hero-sky-panel:nth-child(even) {
+  transform: scaleX(-1);
+}
+.hero-atmosphere::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      90deg,
+      #f8f7fd 0%,
+      rgba(248, 247, 253, 0.96) 30%,
+      rgba(246, 245, 253, 0.65) 55%,
+      rgba(238, 237, 251, 0.25) 100%
+    ),
+    linear-gradient(
+      0deg,
+      #f8f7fd 0%,
+      transparent 23%,
+      rgba(248, 247, 253, 0.06) 100%
+    );
+}
+.home-page > .home-hero::before {
+  z-index: 1;
+  opacity: 0.08;
+}
+.home-hero > .home-hero-copy,
+.home-hero > .home-hero-art {
+  z-index: 2;
+}
+.crew-flow {
+  position: relative;
+  width: 100%;
+  max-width: 680px;
+  aspect-ratio: 680/500;
+  margin: 0;
+  isolation: isolate;
+  container-type: inline-size;
+}
+.crew-flow-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.crew-flow-track {
+  stroke: #9c94bb;
+  stroke-width: 1.25;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.5;
+}
+.crew-flow-track-out {
+  stroke: #8a7bbb;
+  opacity: 0.65;
+}
+.crew-flow-signal {
+  stroke: #7661ed;
+  stroke-width: 2.3;
+  stroke-linecap: round;
+  stroke-dasharray: 18 120;
+  stroke-dashoffset: 120;
+  opacity: 0;
+  vector-effect: non-scaling-stroke;
+}
+.crew-flow-signal-glow {
+  stroke: #b5a0ff;
+  stroke-width: 7;
+  opacity: 0;
+  filter: blur(3px);
+}
+.crew-flow-input {
+  animation: crew-signal-arrive 18s linear infinite;
+  animation-delay: var(--service-delay);
+}
+.crew-flow-output {
+  stroke-dasharray: 24 120;
+  animation: crew-signal-deliver 3s linear infinite;
+  animation-delay: -0.84s;
+}
+.crew-flow-node {
+  --node-size: 8.8cqw;
+  position: absolute;
+  left: var(--node-x);
+  top: calc(var(--node-y) - var(--node-size) / 2);
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  width: 21%;
+}
+.crew-flow-node-icon {
+  position: relative;
+  width: var(--node-size);
+  height: var(--node-size);
+  display: grid;
+  place-items: center;
+  border: 1px solid #d5cfeb;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #fffffff5, #f6f3fff2);
+  box-shadow:
+    0 5px 18px #4e39770a,
+    inset 0 1px #fff;
+}
+.crew-flow-node-icon::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border: 1px solid #9981e8;
+  border-radius: 23px;
+  opacity: 0;
+  animation: crew-service-highlight 18s linear infinite;
+  animation-delay: var(--service-delay);
+}
+.crew-flow .crew-flow-node .category-icon {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: #67558b;
+}
+.crew-flow .crew-flow-node .category-icon svg {
+  width: 3.5cqw;
+  height: 3.5cqw;
+}
+.crew-flow-node[data-featured="true"] .crew-flow-node-icon {
+  background: linear-gradient(140deg, #7b65e8, #5c49ce);
+  border-color: #7560d8;
+  box-shadow:
+    0 7px 22px #6659df26,
+    inset 0 1px #ffffff40;
+}
+.crew-flow .crew-flow-node[data-featured="true"] .category-icon {
+  color: white;
+}
+.crew-flow-node-label {
+  font-size: clamp(10px, 1.9cqw, 13px);
+  color: #514461;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.crew-flow-node[data-featured="true"] .crew-flow-node-label {
+  color: #4f36a6;
+  font-weight: 750;
+}
+.crew-flow-hub {
+  position: absolute;
+  left: 17.9412%;
+  top: 43.6%;
+  width: 27.6471%;
+  height: 12.8%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid #c5b6ed;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #fff, #faf7ff);
+  box-shadow:
+    0 10px 35px #51347d14,
+    0 0 0 5px #ffffff4d;
+}
+.crew-flow-hub::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border: 1px solid #b49be5;
+  border-radius: 21px;
+  opacity: 0;
+  animation: crew-hub-receive 3s ease-out infinite;
+  animation-delay: -0.84s;
+}
+.crew-flow-hub .brand-mark {
+  width: 5cqw;
+  height: 5cqw;
+}
+.crew-flow-hub > div,
+.crew-flow-outcome > div {
+  display: grid;
+  gap: 3px;
+}
+.crew-flow-hub strong {
+  font-size: clamp(12px, 2.65cqw, 18px);
+  line-height: 1.2;
+  letter-spacing: -0.045em;
+  color: #302040;
+}
+.crew-flow-hub > div > span {
+  font-size: clamp(9px, 1.65cqw, 11px);
+  color: #786685;
+}
+.crew-flow-escrow {
+  position: absolute;
+  left: 57.3529%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 8%;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+}
+.crew-flow-shield {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border: 1px solid #d3c6e9;
+  border-radius: 50%;
+  background: #f8f4fff5;
+  color: #7354ba;
+  box-shadow: 0 0 0 5px #ffffff36;
+}
+.crew-flow-shield svg {
+  width: 3.5cqw;
+  height: 3.5cqw;
+}
+.crew-flow-escrow > span:last-child {
+  position: absolute;
+  top: calc(100% + 12px);
+  white-space: nowrap;
+  color: #62506f;
+  font-size: clamp(9px, 1.7cqw, 12px);
+  font-weight: 600;
+}
+.crew-flow-outcome {
+  position: absolute;
+  left: 69.1176%;
+  top: 41.6%;
+  width: 29.4118%;
+  height: 16.8%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #d5c9e7;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #fffffff5, #faf7fff2);
+  box-shadow: 0 8px 30px #51347d0a;
+}
+.crew-flow-outcome strong {
+  font-size: clamp(11px, 2.2cqw, 15px);
+  white-space: nowrap;
+  color: #372445;
+  letter-spacing: -0.025em;
+}
+.crew-flow-outcome > div > span {
+  white-space: normal;
+  line-height: 1.3;
+  font-size: clamp(9px, 1.65cqw, 11px);
+  color: #796887;
+}
+.crew-flow-check {
+  display: grid;
+  place-items: center;
+  width: 5cqw;
+  height: 5cqw;
+  border-radius: 50%;
+  background: #eee7fa;
+  color: #7551b6;
+  flex-shrink: 0;
+}
+.crew-flow-check svg {
+  width: 3cqw;
+  height: 3cqw;
+}
+.home-hero > .hero-motion-control {
+  position: absolute;
+  right: var(--discovery-gutter, 32px);
+  bottom: 18px;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  min-height: 30px;
+  padding: 6px;
+  border: 1px solid #c6bfdc;
+  border-radius: 50%;
+  background: #ffffff80;
+  color: #655780;
+  cursor: pointer;
+}
+.home-hero > .hero-motion-control:hover {
+  background: #fff;
+}
+.home-hero[data-motion="paused"] :is(.hero-sky, .crew-flow-signal) {
+  animation-play-state: paused;
+}
+/* Pseudo-elements must be targeted explicitly: :is() cannot select them. */
+.home-hero[data-motion="paused"] .crew-flow-node-icon::after,
+.home-hero[data-motion="paused"] .crew-flow-hub::after {
+  animation-play-state: paused;
+}
+@keyframes crew-sky-scroll {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+/* One source starts every three seconds, followed by a shorter outgoing signal. */
+@keyframes crew-signal-arrive {
+  0% {
+    stroke-dashoffset: 120;
+    opacity: 0;
+  }
+  1% {
+    opacity: 1;
+  }
+  12% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  13%,
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+@keyframes crew-signal-deliver {
+  0% {
+    stroke-dashoffset: 120;
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  82% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+@keyframes crew-service-highlight {
+  0% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  2% {
+    opacity: 0.55;
+  }
+  11% {
+    transform: scale(1.15);
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes crew-hub-receive {
+  0% {
+    transform: scale(0.98);
+    opacity: 0.45;
+  }
+  70%,
+  100% {
+    transform: scale(1.1);
+    opacity: 0;
+  }
+}
+@media (max-width: 1439px) and (min-width: 1280px) {
+  .crew-flow-hub {
+    gap: 6px;
+    padding: 6px;
+  }
+  .crew-flow-outcome {
+    gap: 6px;
+    padding: 8px;
+  }
+}
+@media (max-width: 1279px) {
+  .home-page > .home-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .home-hero > .home-hero-art {
+    display: none;
+  }
+  .home-hero-copy {
+    max-width: 660px;
+  }
+}
+@media (max-width: 760px) {
+  .hero-atmosphere::after {
+    background:
+      linear-gradient(
+        90deg,
+        rgba(248, 247, 253, 0.97),
+        rgba(248, 247, 253, 0.85)
+      ),
+      linear-gradient(0deg, #f8f7fd, transparent 25%);
+  }
+  .hero-sky {
+    animation-duration: 200s;
+  }
+  .home-hero > .hero-motion-control {
+    bottom: 14px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-sky,
+  .crew-flow-signal,
+  .crew-flow-node-icon::after,
+  .crew-flow-hub::after {
+    animation: none;
+    will-change: auto;
+  }
+  .crew-flow-signal {
+    opacity: 0;
+  }
+  .home-hero > .hero-motion-control {
+    display: none;
+  }
+}
+
+/* Keep the text side quiet; concentrate the moving sky around the service flow. */
+.home-hero .home-title-lead {
+  font-family: var(--font-ui);
+  font-size: 0.74em;
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  word-spacing: 0.03em;
+  line-height: 1.15;
+}
+.home-hero .home-hero-copy > p {
+  color: #3b334f;
+}
+.home-hero .home-hero-copy .home-kicker {
+  color: #35215f;
+}
+.home-page .home-hero h1 em {
+  color: #3e278d;
+}

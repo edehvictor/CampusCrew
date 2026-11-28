@@ -10,6 +10,7 @@ type Props = {
   enabled: boolean;
   submit: (operation: PaymentOperation) => void;
   onComplete: () => void;
+  completionBlocked?: boolean;
 };
 const labels = {
   create: "Create booking escrow",
@@ -28,43 +29,54 @@ export function BookingPayment({
   enabled,
   submit,
   onComplete,
+  completionBlocked = false,
 }: Props) {
   const operations = job.payment?.operations ?? [],
-    settled = ["Paid", "Refunded", "Cancelled"].includes(job.status),
+    settled = ["Paid", "Refunded", "Cancelled", "Removed"].includes(job.status),
     state = job.payment?.state;
   const stage = bookingProgress(job);
+  const prefunded = Boolean(job.publication);
+  const steps = prefunded
+    ? ["Selected", "Budget secured", "Accepted", "Submitted", "Paid"]
+    : progress;
   const instructions =
-    job.status === "Cancelled"
-      ? "Booking cancelled. No payment is due."
-      : job.status === "Refunded"
-        ? job.own
-          ? "Your refundable contribution has been returned."
-          : "The task owner's refundable contribution has been returned."
-        : job.status === "Refund available"
+    job.status === "Removed"
+      ? "Task cancelled. The reserved budget was returned to its owner."
+      : job.status === "Cancelled"
+        ? "Booking cancelled. No payment is due."
+        : job.status === "Refunded"
           ? job.own
-            ? "A refund is available. Reclaim your contribution below."
-            : "Settlement decided. The remaining contribution is refundable to the task owner."
-          : job.status === "Paid"
-            ? "Payment released. This booking is complete."
-            : job.status === "Disputed"
-              ? "Payout is paused while the resolver reviews the dispute."
-              : state === "Submitted"
-                ? job.own
-                  ? "Review the provider's completion before approving payment."
-                  : "Your work is submitted. Waiting for the task owner to review it."
-                : state === "Funded"
-                  ? "Payment is secured. The provider can carry out the task."
-                  : state === "Funding"
-                    ? job.own
-                      ? "Your provider accepted. Secure the payment to start the work."
-                      : "You accepted the terms. Wait for payment to be secured before starting."
-                    : state === "Proposed"
+            ? "Your refundable contribution has been returned."
+            : "The task owner's refundable contribution has been returned."
+          : job.status === "Refund available"
+            ? job.own
+              ? "A refund is available. Reclaim your contribution below."
+              : "Settlement decided. The remaining contribution is refundable to the task owner."
+            : job.status === "Paid"
+              ? "Payment released. This booking is complete."
+              : job.status === "Disputed"
+                ? "Payout is paused while the resolver reviews the dispute."
+                : state === "Submitted"
+                  ? job.own
+                    ? "Review the provider's completion before approving payment."
+                    : "Your work is submitted. Waiting for the task owner to review it."
+                  : state === "Funded"
+                    ? "Payment is secured. The provider can carry out the task."
+                    : state === "Funding"
                       ? job.own
-                        ? "Waiting for the provider to accept."
-                        : "Review the booking details and accept when you are ready."
-                      : job.own
-                        ? "Create the booking escrow so your provider can accept."
-                        : "Waiting for the task owner to prepare the booking escrow.";
+                        ? "Your provider accepted. Secure the payment to start the work."
+                        : "You accepted the terms. Wait for payment to be secured before starting."
+                      : state === "Proposed"
+                        ? job.own
+                          ? "Waiting for the provider to accept."
+                          : "Review the booking details and accept when you are ready."
+                        : job.own
+                          ? prefunded
+                            ? "Your budget is already in escrow. Confirm this provider to return any unused difference, then they can accept. You will not be charged USDC again."
+                            : "Create the booking escrow so your provider can accept."
+                          : prefunded
+                            ? "The task budget is secured. Waiting for the task owner to confirm this assignment."
+                            : "Waiting for the task owner to prepare the booking escrow.";
   function act(operation: PaymentOperation) {
     if (
       operation === "cancel" &&
@@ -87,7 +99,7 @@ export function BookingPayment({
         <small>Test USDC · Stellar Testnet</small>
       </div>
       <ol className="booking-progress" aria-label="Booking progress">
-        {progress.map((label, i) => (
+        {steps.map((label, i) => (
           <li
             key={label}
             data-done={i <= stage.lastReached}
@@ -106,6 +118,21 @@ export function BookingPayment({
         ))}
       </ol>
       <div className="booking-action-focus">
+        {prefunded &&
+          job.own &&
+          job.budget >
+            (job.quotes.find((q) => q.id === job.accepted)?.amount ??
+              job.budget) && (
+            <p className="funded-task-note">
+              Unused budget:{" "}
+              {(
+                job.budget -
+                (job.quotes.find((q) => q.id === job.accepted)?.amount ??
+                  job.budget)
+              ).toFixed(2)}{" "}
+              USDC. Returned automatically when the assignment confirms.
+            </p>
+          )}
         <p className="booking-next-action">{instructions}</p>
         {state === "Submitted" && (
           <BookingReviewCountdown
@@ -128,7 +155,7 @@ export function BookingPayment({
                 <button
                   key={operation}
                   className="button button-primary"
-                  disabled={busy}
+                  disabled={busy || completionBlocked}
                   onClick={onComplete}
                 >
                   Submit completion
@@ -151,11 +178,18 @@ export function BookingPayment({
                   ) : operation === "release" ? (
                     <Banknote size={16} />
                   ) : null}
-                  {labels[operation]}
+                  {operation === "create" && prefunded
+                    ? "Confirm provider & assign budget"
+                    : labels[operation]}
                 </button>
               ),
             )}
         </div>
+        {completionBlocked && (
+          <p className="evidence-submit-blocked" role="status">
+            Finish the evidence step below before submitting completion.
+          </p>
+        )}
         {!enabled && !settled && (
           <p role="status">
             Testnet payment controls are not configured on this deployment.
@@ -167,11 +201,14 @@ export function BookingPayment({
           <summary>Payment terms & deadlines</summary>
           <p>
             Wallet approvals use test XLM for network fees. Accepting the terms
-            does not transfer USDC. Funding locks the agreed payment in escrow.
+            does not transfer USDC.{" "}
+            {prefunded
+              ? "Your task deposit already holds the budget; confirming the assignment returns any difference to you."
+              : "Funding locks the agreed payment in escrow."}
           </p>
           {job.payment?.fundingDeadline && (
             <p>
-              Fund by{" "}
+              {prefunded ? "Confirm assignment & accept by" : "Fund by"}{" "}
               {new Date(job.payment.fundingDeadline * 1000).toLocaleString()}.
             </p>
           )}
@@ -221,6 +258,18 @@ export function BookingPayment({
           </button>
         )}
         <div className="booking-receipts">
+          {job.publication?.cancellationTx && (
+            <a
+              href={
+                "https://stellar.expert/explorer/testnet/tx/" +
+                job.publication.cancellationTx
+              }
+              target="_blank"
+              rel="noreferrer"
+            >
+              Task budget refund receipt
+            </a>
+          )}
           {job.payment?.contract && (
             <a
               href={
@@ -233,11 +282,11 @@ export function BookingPayment({
               Escrow contract
             </a>
           )}
-          {job.payment?.fundingTx && (
+          {(job.payment?.fundingTx || job.publication?.fundingTx) && (
             <a
               href={
                 "https://stellar.expert/explorer/testnet/tx/" +
-                job.payment.fundingTx
+                (job.payment?.fundingTx ?? job.publication?.fundingTx)
               }
               target="_blank"
               rel="noreferrer"

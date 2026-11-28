@@ -1,10 +1,14 @@
 import Link from "next/link";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { LogOut, MapPin, Pencil, Wallet, X } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { categories, type Job } from "./model";
-import { pilotAreas, profileSchema, type PilotProfile } from "@/features/book-one/types/pilot";
+import {
+  pilotAreas,
+  profileSchema,
+  type PilotProfile,
+} from "@/features/book-one/types/pilot";
 import { ProfileBalance } from "./profile-balance";
-import { WalletAddress } from "./wallet-address";
 
 export type PilotPanel = "wallet" | "profile" | "account";
 const titles = {
@@ -101,7 +105,12 @@ export function PilotDialog(props: Props) {
       }}
     >
       <header>
-        <h2 id="pilot-dialog-title">{titles[panel]}</h2>
+        <h2
+          id="pilot-dialog-title"
+          className={panel === "account" ? "sr-only" : undefined}
+        >
+          {titles[panel]}
+        </h2>
         <button
           className="button button-icon"
           type="button"
@@ -239,54 +248,43 @@ export function PilotDialog(props: Props) {
       {panel === "account" && (
         <div className="pilot-steps account-overview">
           <div className="account-identity">
-            <span className="avatar">
-              {profile?.displayName
-                .split(/\s+/)
-                .slice(0, 2)
-                .map((word) => word[0])
-                .join("")
-                .toUpperCase()}
-            </span>
+            <UserAvatar />
             <div>
               <strong>{profile?.displayName}</strong>
               <p>
                 <MapPin size={12} aria-hidden="true" /> {profile?.area}
               </p>
             </div>
-            <button
-              className="button button-icon"
-              type="button"
-              aria-label="Edit profile"
-              disabled={busy}
-              onClick={props.onEdit}
-            >
-              <Pencil size={16} aria-hidden="true" />
-            </button>
           </div>
-          <Link
-            className="button button-primary"
-            href="/me/profile"
-            onClick={props.onClose}
-          >
-            View my profile
-          </Link>
-          {accountWallet && <WalletAddress address={accountWallet} />}
+
           {accountWallet && (
             <ProfileBalance
               key={accountWallet}
               wallet={accountWallet}
               compact
+              onReconnect={props.onConnect}
+              busy={busy}
             />
           )}
-          <div className="account-footer">
+          <div className="account-profile-actions">
+            <Link
+              className="button button-primary"
+              href="/me/profile"
+              onClick={props.onClose}
+            >
+              View profile
+            </Link>
             <button
-              className="text-button"
+              className="button button-secondary"
               type="button"
               disabled={busy}
-              onClick={props.onConnect}
+              onClick={props.onEdit}
             >
-              <Wallet size={14} aria-hidden="true" /> Reconnect wallet
+              <Pencil size={14} aria-hidden="true" />
+              Edit profile
             </button>
+          </div>
+          <div className="account-footer">
             <button
               className="text-button"
               type="button"

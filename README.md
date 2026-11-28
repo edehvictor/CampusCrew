@@ -7,18 +7,21 @@ CampusCrew uses **Stellar Testnet** and **test USDC** for its current pilot. A S
 ## How it works
 
 1. **Join:** Connect a Stellar wallet, sign a login message, and complete a profile. Providers list their services and coverage area.
-2. **Find a match:** A task owner posts what they need, where, and their budget. Nearby providers apply with a price, availability, and note. The owner compares applications and selects one provider.
-3. **Secure payment:** The owner creates an escrow booking, the provider accepts its terms, and the owner funds it with test USDC. Both sides can see the confirmed payment state and receipt.
+2. **Fund & publish:** Describe the task and fund its maximum budget in test USDC. The server publishes only after confirming the deposit. Providers quote within that budget.
+3. **Choose a provider:** Compare offers and confirm an assignment. The existing deposit covers the agreed quote; any unused difference returns to the owner. The provider accepts before starting. Both sides can see confirmed payment state and receipts.
 4. **Complete the task:** The provider submits a completion note and, when required by the task owner, a photo or document. The owner can approve payout immediately or open a dispute.
 5. **Settle fairly:** If the owner does not act, the provider may claim after two days *unless a dispute was opened*. A dispute pauses ordinary payout; the configured resolver decides the provider's award, and the remainder becomes refundable. After confirmed payout, both sides can review the booking.
 
 The app currently prepares **individual bookings**. The contract supports multiple contributions, but **Book Together** invitations, separate neighbour payments, and shared funding progress are still planned. See [the roadmap](ROADMAP.md).
 
+**Funded publishing is a new protocol in source, awaiting its separate verified Testnet deployment.** The original deployed contract continues to serve existing bookings. New posts are disabled until activation. Application withdrawal and task removal require the new database migration. Follow the [funded-task rollout guide](docs/FUNDED_TASKS.md) before testing this flow.
+
 ## What is built
 
 | Area | Current state |
 | --- | --- |
-| Marketplace | Wallet sign-in, profiles, UNN tasks, applications, provider selection, bookings, and personal activity pages |
+| Marketplace | Wallet sign-in, profiles, UNN tasks, applications, provider selection, bookings, and personal activity pages; task/application editing before selection with version checks |
+| Nearby discovery | Optional approximate-location sharing for 30 minutes, distance/service filters, and ordinary area browsing without location permission |
 | Stellar payments | Individual Testnet escrow creation, acceptance, funding, completion, payout, cancellation, disputes, and refunds |
 | Trust and follow-up | Private booking messages and completion evidence, participant notifications, post-payout reviews, provider metrics, and payment history |
 | Mobile | Responsive web app and installable PWA; phone push requires a configured worker, HTTPS, and user permission |
@@ -85,7 +88,7 @@ Set `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `.env.local`. 
 
 To use the **existing verified Testnet escrow**, fill `STELLAR_ESCROW_CONTRACT`, `STELLAR_ESCROW_WASM_HASH`, and `STELLAR_ESCROW_RESOLVER` from [`deployments/stellar-testnet.json`](deployments/stellar-testnet.json), then run `npm.cmd run stellar:enable`. This checks the deployment and required payment tables before setting `STELLAR_ESCROW_ENABLED=true` locally. Wallets need test XLM for fees and Circle-issued **test USDC** for funding; the profile dialog provides wallet setup controls.
 
-Use two browser profiles to test the owner/provider journey. Post a test task, apply from the other wallet, select the provider, create and accept escrow, fund, submit work, and approve payout. Check the funding and payout receipts in both accounts. For a pilot dispute, the configured resolver can run `npm.cmd run stellar:resolve -- TASK_UUID PROVIDER_USDC_AMOUNT`; the decision is manual and should be documented. The resolver key never belongs in the web app's environment.
+After funded publishing is activated, use two browser profiles to test the owner/provider journey. Fund and publish a task, apply from the other wallet, select and assign the provider, accept, submit work and approve payout. Check the publication, assignment and payout receipts in both accounts. For a pilot dispute, the configured resolver can run `npm.cmd run stellar:resolve -- TASK_UUID PROVIDER_USDC_AMOUNT`; the decision is manual and should be documented. The resolver key never belongs in the web app's environment.
 
 For a guided countdown, dispute, split award, and refund test, follow [the two-wallet walkthrough](docs/DISPUTE_TEST.md).
 

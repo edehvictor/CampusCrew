@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { disablePhonePush } from "@/components/shared/pwa-controls";
 import { Bell, CircleUserRound, Wallet } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -12,6 +13,7 @@ import { getStellarWallet } from "@/features/book-one/auth/pilot-wallet";
 import { signPreparedWalletTransaction } from "@/features/book-one/auth/wallet-signing";
 import { PilotDialog, type PilotPanel } from "./pilot-dialog";
 import { PilotError } from "./pilot-error";
+import type { PublicationResult } from "./types/publication";
 import type {
   EntryIntent,
   PaymentOperation,
@@ -310,6 +312,61 @@ export function PilotBoard() {
     return result.message;
   }
 
+  async function publicationAction(
+    input:
+      | { action: "prepare"; draft: Extract<PilotMutation, { action: "post" }> }
+      | { action: "prepare-cancel"; requestId: string },
+  ): Promise<PublicationResult> {
+    if (!account) throw new PilotError("Sign in before funding a task.", 401);
+    const kit = getStellarWallet(),
+      { address } = await kit.getAddress();
+    if (address !== account.wallet)
+      throw new PilotError("Reconnect the wallet you signed in with.", 409);
+    const prepared = await api<{
+      intentId: string;
+      xdr: string;
+      wallet: string;
+      networkPassphrase: string;
+    }>("/api/stellar/publication", "POST", input);
+    try {
+      if (
+        prepared.wallet !== address ||
+        prepared.networkPassphrase !== Networks.TESTNET
+      )
+        throw new PilotError(
+          "The prepared wallet or network did not match.",
+          409,
+        );
+      // Native dialogs otherwise make wallet-kit overlays inert underneath.
+      const dialog = document.querySelector<HTMLDialogElement>(
+        ".request-dialog[open]",
+      );
+      dialog?.close();
+      let signed;
+      try {
+        signed = await signPreparedWalletTransaction(kit, prepared, address);
+      } finally {
+        if (dialog?.isConnected && !dialog.open) dialog.showModal();
+      }
+      return await api<PublicationResult>("/api/stellar/publication", "POST", {
+        action: "submit",
+        intentId: prepared.intentId,
+        xdr: signed.signedTxXdr,
+      });
+    } finally {
+      await load(true);
+    }
+  }
+  async function checkPublication(intentId: string) {
+    try {
+      return await api<PublicationResult>("/api/stellar/publication", "POST", {
+        action: "sync",
+        intentId,
+      });
+    } finally {
+      await load(true);
+    }
+  }
   function close() {
     if (working.current) return;
     pending.current = null;
@@ -319,12 +376,6 @@ export function PilotBoard() {
   }
 
   const name = profile?.displayName ?? "Complete profile";
-  const initials = profile?.displayName
-    .split(/\s+/)
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
   const accountControl =
     sessionState !== "ready" ? (
       <button
@@ -356,9 +407,7 @@ export function PilotBoard() {
           setPanel(profile ? "account" : "profile");
         }}
       >
-        <span className="avatar" aria-hidden="true">
-          {initials || <CircleUserRound size={20} />}
-        </span>
+        <UserAvatar />
         <span>{name}</span>
       </button>
     ) : (
@@ -445,6 +494,12 @@ export function PilotBoard() {
             : undefined,
           banner: notice,
           paymentsEnabled: snapshot.paymentsEnabled,
+          fundedPostingEnabled: snapshot.fundedPostingEnabled ?? false,
+          publications: snapshot.publications ?? [],
+          publish: (draft) => publicationAction({ action: "prepare", draft }),
+          cancelTask: (requestId) =>
+            publicationAction({ action: "prepare-cancel", requestId }),
+          checkPublication,
           prepare,
           resume,
           onResumed: () => setResume(null),

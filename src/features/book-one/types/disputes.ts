@@ -69,6 +69,8 @@ export type DisputeCase = {
     id: string;
     name: string;
     uploader: string;
+    mime?: string;
+    bytes?: number;
     created_at: string;
   }[];
   messages: { id: string; body: string; role: string; createdAt: string }[];

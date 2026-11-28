@@ -23,7 +23,13 @@ export type Page =
   | "Earnings"
   | "Notifications";
 export type Status =
+  | "Funding required"
+  | "Removed"
+  | "Expired"
+  | "Closing"
   | "Open"
+  | "Awaiting assignment"
+  | "Awaiting acceptance"
   | "Awaiting funding"
   | "Funded"
   | "Ready for review"
@@ -38,6 +44,10 @@ export type Quote = {
   amount: number;
   availability: string;
   note: string;
+  revision?: number;
+  taskRevision?: number;
+  updatedAt?: string | null;
+  withdrawnAt?: string | null;
   own?: boolean;
   profileId?: string;
   reputation?: import("@/features/book-one/types/experience").Reputation;
@@ -53,6 +63,15 @@ export type Job = {
   timing: string;
   budget: number;
   scope: string;
+  revision?: number;
+  updatedAt?: string | null;
+  lifecycleReady?: boolean;
+  publication?: {
+    fundingTx: string;
+    budget: number;
+    expiresAt: number;
+    cancellationTx: string | null;
+  } | null;
   customer: string;
   own?: boolean;
   quotes: Quote[];
@@ -63,6 +82,7 @@ export type Job = {
   reviewed?: boolean;
   applicationCount?: number;
   payment?: {
+    prefunded?: boolean;
     fundingTx: string | null;
     settlementTx: string | null;
     settledAt?: string | null;
@@ -105,8 +125,8 @@ export function isInView(job: Job, view: View) {
     case "Bookings":
       return Boolean(
         job.accepted &&
-          (job.own ||
-            job.quotes.some((quote) => quote.id === job.accepted && quote.own)),
+        (job.own ||
+          job.quotes.some((quote) => quote.id === job.accepted && quote.own)),
       );
   }
 }

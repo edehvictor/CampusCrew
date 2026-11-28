@@ -1,4 +1,4 @@
-export const evidenceLimit = 5 * 1024 * 1024;
+export const evidenceLimit = 4 * 1024 * 1024;
 export function evidenceMime(bytes: Uint8Array): string | null {
   if (
     bytes.length >= 8 &&

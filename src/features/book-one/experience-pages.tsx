@@ -1,33 +1,21 @@
 "use client";
 import Link from "next/link";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { useEffect, useState } from "react";
-import { Star, MapPin, Bell } from "lucide-react";
+import { Bell } from "lucide-react";
 import { PwaControls } from "@/components/shared/pwa-controls";
 import { ProfileBalance } from "./profile-balance";
 import { WalletAddress } from "./wallet-address";
-import { categories, type Job, type Page } from "./model";
+import { type Job, type Page } from "./model";
 import { EarningsPage } from "./earnings-page";
 import type {
   ActivityNotification,
   PublicProvider,
-  Reputation,
 } from "@/features/book-one/types/experience";
-export function ReputationLine({ stats }: { stats?: Reputation }) {
-  return (
-    <div className="reputation-line">
-      {stats?.reviewCount ? (
-        <span>
-          <Star size={13} />
-          {Number(stats.rating).toFixed(1)} / {stats.reviewCount} reviews
-        </span>
-      ) : (
-        <span>No reviews yet</span>
-      )}
-      <span>{stats?.completed ?? 0} completed</span>
-      <small>Testnet activity</small>
-    </div>
-  );
-}
+import { ReputationLine } from "./reputation-line";
+export { ReputationLine } from "./reputation-line";
+import { ProviderDiscovery } from "./provider-discovery";
+import { ProviderLocation } from "./provider-location";
 export function ExperiencePage({
   page,
   id,
@@ -49,9 +37,7 @@ export function ExperiencePage({
 }) {
   const [providers, setProviders] = useState<PublicProvider[]>([]),
     [error, setError] = useState(""),
-    [loading, setLoading] = useState(true),
-    [search, setSearch] = useState(""),
-    [category, setCategory] = useState("");
+    [loading, setLoading] = useState(true);
   useEffect(() => {
     let active = true;
     if (["Find providers", "Provider profile", "My profile"].includes(page)) {
@@ -120,14 +106,6 @@ export function ExperiencePage({
     );
   if (page === "Earnings") return <EarningsPage jobs={jobs} />;
   const profile = providers[0];
-  const list = providers.filter(
-    (p) =>
-      (!category || p.skills.includes(category)) &&
-      [p.name, p.bio, ...p.skills, p.area]
-        .join(" ")
-        .toLowerCase()
-        .includes(search.toLowerCase()),
-  );
   return (
     <div className="experience-page">
       <div className="experience-heading">
@@ -154,57 +132,17 @@ export function ExperiencePage({
       )}
       {loading && <p role="status">Getting profiles...</p>}
       {page === "Find providers" ? (
-        <>
-          <div className="provider-search">
-            <input
-              aria-label="Search providers"
-              placeholder="Search skills or names"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <select
-              aria-label="Filter provider service"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-            >
-              <option value="">All services</option>
-              {categories.map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </select>
-          </div>
-          <div className="provider-grid">
-            {list.map((p) => (
-              <Link
-                className="provider-card"
-                href={"/providers/" + p.id}
-                key={p.id}
-              >
-                <span className="avatar">
-                  {p.name
-                    .split(/\s+/)
-                    .slice(0, 2)
-                    .map((w) => w[0])
-                    .join("")}
-                </span>
-                <h2>{p.name}</h2>
-                <p>
-                  <MapPin size={13} />
-                  {p.area}
-                </p>
-                <p>{p.skills.join(" / ")}</p>
-                <ReputationLine stats={p.stats} />
-                <span className="text-button">View profile</span>
-              </Link>
-            ))}
-          </div>
-          {!loading && !list.length && <p>No matching providers yet.</p>}
-        </>
+        <ProviderDiscovery
+          key={wallet ?? "public"}
+          providers={providers}
+          wallet={wallet}
+          loading={loading}
+        />
       ) : profile ? (
         <>
           <section className="provider-profile">
             <div>
-              <span className="avatar">{profile.name[0]}</span>
+              <UserAvatar />
               <h2>{profile.name}</h2>
               <p>{profile.area} / University of Nigeria, Nsukka</p>
             </div>
@@ -255,6 +193,15 @@ export function ExperiencePage({
           </section>
           {page === "My profile" && wallet && (
             <>
+              <ProviderLocation
+                key={wallet}
+                eligible={Boolean(
+                  profile.skills.length &&
+                  profile.coverage.some(
+                    (area) => area === "On campus" || area === "Around Nsukka",
+                  ),
+                )}
+              />
               <WalletAddress address={wallet} />
               <ProfileBalance wallet={wallet} />
               <PwaControls signedIn />

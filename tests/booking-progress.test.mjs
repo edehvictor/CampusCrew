@@ -56,3 +56,23 @@ test("only a confirmed Paid contract state reaches the final payment step", () =
   assert.equal(paid.lastReached, 4);
   assert.equal(paid.current, -1);
 });
+
+test("prefunded bookings show the secured budget before acceptance and never invent submission", () => {
+  const proposed = bookingProgress(
+    booking("Proposed", { prefunded: true, fundingTx: "deposit" }),
+  );
+  assert.equal(proposed.lastReached, 1);
+  assert.equal(proposed.current, 1);
+  assert.equal(
+    bookingProgress(
+      booking("Funded", { prefunded: true, fundingTx: "deposit" }),
+    ).lastReached,
+    2,
+  );
+  const removed = bookingProgress({
+    ...booking(undefined, { prefunded: true, fundingTx: "deposit" }),
+    status: "Removed",
+  });
+  assert.equal(removed.current, -1);
+  assert.match(removed.title, /refunded/);
+});

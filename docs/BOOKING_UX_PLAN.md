@@ -24,12 +24,17 @@ Browser checks:
 5. Inspect a partial settlement: refund availability must not be presented as a full payout. Receipts and refund controls remain reachable.
 6. At 360px width: cards, prices and progress fit; controls remain readable and keyboard accessible. Expand task details and compare them with the original task.
 
+## Batch 2: task and application editing
+
+Implemented with server-owned identity, version checks, task-row locking and database guards after selection. Task changes require existing applicants to review and confirm their offers before selection. Forms are prefilled, preserve the opened version and allow cancelling without writing. Follow [TASK_EDITING.md](TASK_EDITING.md) for the migration, code tour and two-browser checks. The isolated desktop/mobile browser check passed. The user confirmed the migration, and the connected database revision field was verified on November 28. Real two-account confirmation remains pending.
+
 ## Remaining approved batches
 
-2. Task and application editing: server ownership checks, validation and atomic selection/edit locking. Lock agreed price/scope after selection. Existing applicants must be made aware of material task edits.
 3. Evidence uploads: preview, file details, explicit upload action, cancel/remove before submission, clear separation of drafts and submitted evidence. Define retention/removal rules for submitted evidence before enabling deletion.
 4. Workspace: clearer Work, Messages and Activity panels, with distinct empty/loading/error states and a readable event timeline.
 5. Notifications: use the actual participant's name, link to the booking and preserve event deduplication.
 6. Wallet approvals: explain each action before signing, including USDC movement and variable XLM network fees. Never present an estimated fee as a fixed final charge.
 
 Validation: all 74 application/database tests passed, including four progress regressions; ESLint and the production Next.js build passed. Interactive desktop/mobile confirmation is still pending. No new database migration is required for batch 1. Later database changes will have separate migrations and authorization tests.
+
+Batch 2 validation: all 98 current application/database tests pass, including 14 editing/notification-route checks and 10 nearby-location checks. The editing forms were also exercised in an isolated browser with intercepted API fixtures; no sample records were added to Supabase.

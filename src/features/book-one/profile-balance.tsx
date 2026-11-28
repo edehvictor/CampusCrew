@@ -1,5 +1,6 @@
-import { ExternalLink, RotateCw, Wallet } from "lucide-react";
+import { ExternalLink, RotateCw, Wallet, ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { WalletAddress } from "./wallet-address";
 import type { WalletBalance } from "@/features/book-one/services/stellar-balance";
 import { getStellarWallet } from "@/features/book-one/auth/pilot-wallet";
 import { Networks } from "@creit.tech/stellar-wallets-kit/types";
@@ -15,9 +16,13 @@ function amount(value: string) {
 export function ProfileBalance({
   wallet,
   compact = false,
+  onReconnect,
+  busy = false,
 }: {
   wallet: string;
   compact?: boolean;
+  onReconnect?: () => void;
+  busy?: boolean;
 }) {
   const [result, setResult] = useState<WalletBalance | null>(null);
   const [error, setError] = useState("");
@@ -184,6 +189,96 @@ export function ProfileBalance({
     };
   }, [wallet, refresh]);
 
+  const walletTools = result ? (
+    <details
+      className="wallet-tools"
+      open={
+        (!compact && (!result.accountExists || !result.hasUsdcTrustline)) ||
+        Boolean(preparedUsdc)
+      }
+    >
+      <summary>Test wallet tools</summary>
+      <div className="wallet-setup-step">
+        {!result.accountExists ? (
+          <>
+            <strong>Activate your wallet</strong>
+            <p>Test XLM covers your transaction fees.</p>
+            <button
+              className="button button-primary"
+              type="button"
+              disabled={settingUp || loading}
+              onClick={() => {
+                void setup("fund_xlm");
+              }}
+            >
+              {settingUp ? "Setting up…" : "Get test XLM"}
+            </button>
+          </>
+        ) : !result.hasUsdcTrustline ? (
+          <>
+            <strong>Enable test USDC</strong>
+            <p>
+              Approve once in your wallet, then receive tokens from Circle’s
+              faucet.
+            </p>
+            <button
+              className="button button-primary"
+              type="button"
+              disabled={settingUp || loading}
+              onClick={() => {
+                void (preparedUsdc ? approveUsdc() : setup("prepare_usdc"));
+              }}
+            >
+              {settingUp
+                ? "Waiting for wallet setup…"
+                : preparedUsdc
+                  ? "Open wallet and approve"
+                  : "Add test USDC to wallet"}
+            </button>
+          </>
+        ) : (
+          <>
+            <strong>Get test funds</strong>
+            <p>
+              Choose USDC and Stellar Testnet on Circle’s faucet. Paste your
+              wallet address, then refresh here.
+            </p>
+            <a
+              className="button button-primary"
+              href="https://faucet.circle.com/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Get test USDC <ExternalLink size={13} aria-hidden="true" />
+            </a>
+          </>
+        )}
+      </div>
+    </details>
+  ) : null;
+  const walletLinks = (
+    <div className="profile-balance-links">
+      {result?.accountExists && Number(result.xlm) < 100 && (
+        <button
+          className="text-button"
+          type="button"
+          disabled={settingUp || loading}
+          onClick={() => {
+            void setup("fund_xlm");
+          }}
+        >
+          Get test XLM
+        </button>
+      )}
+      <a
+        href={`https://stellar.expert/explorer/testnet/account/${wallet}`}
+        target="_blank"
+        rel="noreferrer"
+      >
+        View wallet <ExternalLink size={13} aria-hidden="true" />
+      </a>
+    </div>
+  );
   return (
     <section
       className={
@@ -195,7 +290,8 @@ export function ProfileBalance({
     >
       <div className="profile-balance-heading">
         <span>
-          <Wallet size={17} aria-hidden="true" /> Wallet balance
+          <Wallet size={17} aria-hidden="true" />{" "}
+          {compact ? "Test USDC" : "Wallet balance"}
         </span>
         <button
           className="text-button"
@@ -207,10 +303,10 @@ export function ProfileBalance({
             setRefresh((value) => value + 1);
           }}
         >
-          <RotateCw size={14} aria-hidden="true" /> Refresh
+          <RotateCw size={14} aria-hidden="true" /> {!compact && "Refresh"}
         </button>
       </div>
-      <small>Stellar Testnet · Test funds</small>
+      {!compact && <small>Stellar Testnet · Test funds</small>}
       {loading && <p role="status">Loading your balance…</p>}
       {error && (
         <p className="form-error" role="alert">
@@ -228,105 +324,58 @@ export function ProfileBalance({
         <>
           <dl className="profile-balance-amounts">
             <div>
-              <dt>Test USDC</dt>
-              <dd>{amount(result.usdc)}</dd>
+              <dt className={compact ? "sr-only" : undefined}>Test USDC</dt>
+              <dd>
+                <span className="balance-value">{amount(result.usdc)}</span>
+                {compact && <small>Stellar Testnet</small>}
+              </dd>
             </div>
-            <div>
-              <dt>Test XLM</dt>
-              <dd>{amount(result.xlm)}</dd>
-            </div>
+            {!compact && (
+              <div>
+                <dt>Test XLM</dt>
+                <dd>{amount(result.xlm)}</dd>
+              </div>
+            )}
           </dl>
-          <details
-            className="wallet-tools"
-            open={
-              !result.accountExists ||
-              !result.hasUsdcTrustline ||
-              Boolean(preparedUsdc)
-            }
-          >
-            <summary>Test wallet tools</summary>
-            <div className="wallet-setup-step">
-              {!result.accountExists ? (
-                <>
-                  <strong>Activate your wallet</strong>
-                  <p>Test XLM covers your transaction fees.</p>
-                  <button
-                    className="button button-primary"
-                    type="button"
-                    disabled={settingUp || loading}
-                    onClick={() => {
-                      void setup("fund_xlm");
-                    }}
-                  >
-                    {settingUp ? "Setting up…" : "Get test XLM"}
-                  </button>
-                </>
-              ) : !result.hasUsdcTrustline ? (
-                <>
-                  <strong>Enable test USDC</strong>
-                  <p>
-                    Approve once in your wallet, then receive tokens from
-                    Circle’s faucet.
-                  </p>
-                  <button
-                    className="button button-primary"
-                    type="button"
-                    disabled={settingUp || loading}
-                    onClick={() => {
-                      void (preparedUsdc
-                        ? approveUsdc()
-                        : setup("prepare_usdc"));
-                    }}
-                  >
-                    {settingUp
-                      ? "Waiting for wallet setup…"
-                      : preparedUsdc
-                        ? "Open wallet and approve"
-                        : "Add test USDC to wallet"}
-                  </button>
-                </>
-              ) : (
-                <>
-                  <strong>Get test funds</strong>
-                  <p>
-                    Choose USDC and Stellar Testnet on Circle’s faucet. Paste
-                    your wallet address, then refresh here.
-                  </p>
-                  <a
-                    className="button button-primary"
-                    href="https://faucet.circle.com/"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Get test USDC <ExternalLink size={13} aria-hidden="true" />
-                  </a>
-                </>
-              )}
-            </div>
-          </details>
+
+          {!compact && walletTools}
         </>
       )}
-      <div className="profile-balance-links">
-        {result?.accountExists && Number(result.xlm) < 100 && (
-          <button
-            className="text-button"
-            type="button"
-            disabled={settingUp || loading}
-            onClick={() => {
-              void setup("fund_xlm");
-            }}
-          >
-            Get test XLM
-          </button>
-        )}
-        <a
-          href={`https://stellar.expert/explorer/testnet/account/${wallet}`}
-          target="_blank"
-          rel="noreferrer"
-        >
-          View wallet <ExternalLink size={13} aria-hidden="true" />
-        </a>
-      </div>
+      {compact ? (
+        <details className="account-wallet-details">
+          <summary>
+            Wallet details <ChevronDown size={14} aria-hidden="true" />
+          </summary>
+          <div className="account-wallet-content">
+            <WalletAddress address={wallet} />
+            {result && (
+              <p className="account-gas-balance">
+                <span>Test XLM for fees</span>
+                <strong>{amount(result.xlm)}</strong>
+              </p>
+            )}
+            {result && !result.hasUsdcTrustline && (
+              <p className="wallet-setup-hint">
+                Enable test USDC below before receiving payments.
+              </p>
+            )}
+            {walletTools}
+            {walletLinks}
+            {onReconnect && (
+              <button
+                type="button"
+                className="text-button"
+                disabled={busy || settingUp}
+                onClick={onReconnect}
+              >
+                Reconnect wallet
+              </button>
+            )}
+          </div>
+        </details>
+      ) : (
+        walletLinks
+      )}
     </section>
   );
 }

@@ -90,3 +90,15 @@ Validation for this update: ESLint and the production Next.js build passed, and 
 November 23 navigation/payment UI refinement: moved page entry points into a shared marketplace layout to preserve the session across navigation. Added request deduplication and stale-session response protection. Redesigned campus discovery and the earnings/payment ledger with actual receipt-backed records, participant roles, status/search filters, CSV export and accessible receipt details. All 48 application tests, lint and the production build passed before formatting; interactive browser confirmation remains pending because the computer-use helper is unavailable. No new database migration is required.
 
 At the user request, restored the previous Explore campuses design. The redesigned payment history, shared marketplace layout and session-request protection remain in place.
+
+## November 28 funded task lifecycle
+
+A separate reserve-before-publication protocol is implemented in source. Owners fund their maximum task budget before a public task row is created; quotes are capped at that budget. Assignment reuses the deposit and atomically returns any difference. New application withdrawal and task removal retain private history and refund unassigned deposits before removing their listing. Older bookings retain their original contract.
+
+Application/database checks cover private funding intents, receipt binding, budget ceilings, ownership, withdrawn offers, replay, selection/removal races and expired listings. The new contract methods and six additional Rust scenarios require verification before deployment. Formatting now passes after the user resolved the Windows formatter restriction; dependency downloads still encounter a Windows TLS error in this session. Do not enable the new funding configuration until the new Rust checks and separate deployment pass. See `docs/FUNDED_TASKS.md` for activation and two-wallet acceptance tests. Group booking remains a later milestone.
+
+## November 28 evidence workflow
+
+Implemented local photo/PDF previews, explicit upload, real progress, cancellation and retry with stable content-bound identifiers. The provider can remove their own pre-submission attachment; completion preparation and evidence removal serialize against the same escrow row, and case evidence remains immutable. The shared uploader also supports append-only dispute uploads. Required evidence and unfinished selections block accidental completion submission.
+
+The user applied `20261128000300_evidence_workflow.sql`, and read-only checks confirmed the new development columns and submission-lock function. This migration is independent of funded posting and requires no contract deployment. Database, transport and isolated mobile/desktop checks are documented in `docs/EVIDENCE_UPLOADS.md`. A fresh user-operated upload/completion run remains the live acceptance check.

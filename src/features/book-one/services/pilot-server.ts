@@ -1,8 +1,18 @@
 import "server-only";
+import { getFundedPostingConfig } from "./escrow-config";
+import {
+  reconcilePublications,
+  publicationRecoveries,
+} from "./publication-server";
+import { editMarketplace } from "./marketplace-editing-server";
 
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import type { Job } from "@/features/book-one/model";
-import type { PilotMutation, PilotProfile, PilotSnapshot } from "@/features/book-one/types/pilot";
+import type {
+  PilotMutation,
+  PilotProfile,
+  PilotSnapshot,
+} from "@/features/book-one/types/pilot";
 import { PilotError } from "@/features/book-one/pilot-error";
 import {
   checkStellarDatabase,
@@ -31,6 +41,7 @@ export async function readSnapshot(
   if (user && getEscrowConfig()) {
     try {
       await reconcilePending(user.wallet);
+      await reconcilePublications(user.wallet);
     } catch {
       syncWarning = true;
     }
@@ -59,7 +70,8 @@ export async function readSnapshot(
     : null;
   let jobs = await enrichEscrowJobs((board.data ?? []) as Job[], user?.wallet);
   let experienceReady = true;
-  let alerts: import("@/features/book-one/types/experience").ActivityNotification[] = [];
+  let alerts: import("@/features/book-one/types/experience").ActivityNotification[] =
+    [];
   let profileId: string | undefined;
   try {
     jobs = await enrichExperience(jobs, user?.wallet);
@@ -86,6 +98,8 @@ export async function readSnapshot(
     syncWarning,
     account: user ? { wallet: user.wallet, profile: details } : null,
     paymentsEnabled: Boolean(getEscrowConfig()),
+    fundedPostingEnabled: Boolean(getFundedPostingConfig()),
+    publications: user ? await publicationRecoveries(user.wallet) : [],
   };
 }
 
@@ -126,50 +140,72 @@ export async function runPilotMutation(
     throw new PilotError("Complete your CampusCrew profile first.", 409);
 
   switch (mutation.action) {
-    case "post": {
-      const { requestId, title, category, area, timing, budget, scope } =
-        mutation;
-      const { error } = await db.from("campuscrew_stellar_tasks").insert({
-        id: requestId,
-        requester_wallet: user.wallet,
-        title,
-        category,
-        area,
-        timing,
-        budget,
-        scope,
-        evidence_required: mutation.evidenceRequired,
+    case "edit-task":
+    case "edit-application":
+      await editMarketplace(user.wallet, mutation);
+      return {};
+    case "post":
+      throw new PilotError(
+        "Fund and publish your task using the wallet approval. Unfunded tasks cannot be published.",
+        409,
+      );
+    case "withdraw": {
+      const r = await db.rpc("campuscrew_withdraw_application", {
+        p_wallet: user.wallet,
+        p_id: mutation.requestId,
+        p_application: mutation.applicationId,
+        p_revision: mutation.revision,
       });
-      if (error?.code === "23505") {
-        const existing = await db
-          .from("campuscrew_stellar_tasks")
-          .select("id")
-          .eq("id", requestId)
-          .eq("requester_wallet", user.wallet)
-          .maybeSingle();
-        checkStellarDatabase(existing.error);
-        if (existing.data) return { requestId };
-      }
-      checkStellarDatabase(error);
-      return { requestId };
+      checkStellarDatabase(r.error);
+      return {};
+    }
+    case "remove-task": {
+      const r = await db.rpc("campuscrew_remove_task", {
+        p_wallet: user.wallet,
+        p_id: mutation.requestId,
+      });
+      checkStellarDatabase(r.error);
+      return {};
     }
     case "apply": {
-      const { error } = await db.rpc("campuscrew_stellar_apply", {
-        p_wallet: user.wallet,
-        p_request_id: mutation.requestId,
-        p_amount: mutation.amount,
-        p_availability: mutation.availability,
-        p_note: mutation.note,
-      });
+      const { error } = await db.rpc(
+        mutation.taskRevision
+          ? "campuscrew_stellar_apply_v2"
+          : "campuscrew_stellar_apply",
+        {
+          p_wallet: user.wallet,
+          p_request_id: mutation.requestId,
+          p_amount: mutation.amount,
+          p_availability: mutation.availability,
+          p_note: mutation.note,
+          ...(mutation.taskRevision
+            ? { p_task_revision: mutation.taskRevision }
+            : {}),
+        },
+      );
       checkStellarDatabase(error);
       return {};
     }
     case "select": {
-      const { error } = await db.rpc("campuscrew_stellar_select_provider", {
-        p_wallet: user.wallet,
-        p_request_id: mutation.requestId,
-        p_application_id: mutation.applicationId,
-      });
+      const versioned = Boolean(
+        mutation.taskRevision && mutation.applicationRevision,
+      );
+      const { error } = await db.rpc(
+        versioned
+          ? "campuscrew_stellar_select_provider_v2"
+          : "campuscrew_stellar_select_provider",
+        {
+          p_wallet: user.wallet,
+          p_request_id: mutation.requestId,
+          p_application_id: mutation.applicationId,
+          ...(versioned
+            ? {
+                p_task_revision: mutation.taskRevision,
+                p_application_revision: mutation.applicationRevision,
+              }
+            : {}),
+        },
+      );
       checkStellarDatabase(error);
       return {};
     }

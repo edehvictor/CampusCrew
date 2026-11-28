@@ -1,10 +1,13 @@
 import Link from "next/link";
+import { useState } from "react";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import {
   ArrowLeft,
   CalendarDays,
   Check,
   ChevronDown,
   ClipboardList,
+  Pencil,
   MapPin,
   Send,
   Wallet,
@@ -24,11 +27,21 @@ type Props = {
   onAccept: (quote: Quote) => void;
   onQuote: () => void;
   onComplete: () => void;
+  onRemoveTask: () => void;
+  onWithdraw: () => void;
+  onEditTask: () => void;
+  onEditApplication: () => void;
   busy: boolean;
   payment: { enabled: boolean; submit: (operation: PaymentOperation) => void };
 };
 const statusTone: Record<Status, string> = {
   Open: "open",
+  "Funding required": "waiting",
+  Removed: "neutral",
+  Expired: "neutral",
+  Closing: "waiting",
+  "Awaiting assignment": "waiting",
+  "Awaiting acceptance": "waiting",
   "Awaiting funding": "waiting",
   Funded: "positive",
   "Ready for review": "waiting",
@@ -47,16 +60,19 @@ export function RequestDetail({
   onAccept,
   onQuote,
   onComplete,
+  onRemoveTask,
+  onWithdraw,
+  onEditTask,
+  onEditApplication,
   busy,
   payment,
 }: Props) {
+  const [evidencePending, setEvidencePending] = useState(
+    Boolean(job.evidenceRequired && !job.own && job.status === "Funded"),
+  );
   const accepted = job.quotes.find((quote) => quote.id === job.accepted);
   const ownQuote = job.quotes.find((quote) => quote.own);
   const booking = job.own || accepted?.own ? accepted : undefined;
-  const customerInitials = job.customer
-    .split(" ")
-    .map((name) => name[0])
-    .join("");
   return (
     <section className="request-detail" aria-labelledby="request-title">
       <button
@@ -81,11 +97,67 @@ export function RequestDetail({
         {job.title}
       </h2>
       <div className="request-byline">
-        <span className="avatar avatar-small" aria-hidden="true">
-          {customerInitials}
-        </span>
+        <UserAvatar className="avatar-small" />
         Posted by <strong>{job.customer}</strong>
       </div>
+      {job.own && job.status === "Open" && job.revision && (
+        <button
+          className="text-button edit-task-button"
+          type="button"
+          disabled={busy}
+          onClick={onEditTask}
+        >
+          <Pencil size={14} aria-hidden="true" />
+          Edit task
+        </button>
+      )}
+      {job.own &&
+        job.lifecycleReady &&
+        !["Removed", "Closing"].includes(job.status) &&
+        (!job.accepted ||
+          (job.publication &&
+            (!job.payment?.state || job.payment.state === "Uncreated"))) && (
+          <button
+            type="button"
+            className="text-button edit-task-button"
+            disabled={busy}
+            onClick={onRemoveTask}
+          >
+            {job.publication ? "Remove task & refund budget" : "Remove task"}
+          </button>
+        )}
+      {job.publication && !job.accepted && (
+        <p className="funded-task-note">
+          {job.status === "Removed"
+            ? "Budget refunded. This task is closed."
+            : job.status === "Expired"
+              ? "Applications closed. Remove this task to reclaim your reserved budget."
+              : job.status === "Closing"
+                ? "Refund awaiting confirmation. Applications are paused."
+                : "Budget held in escrow. Quotes cannot exceed the funded amount."}{" "}
+          <a
+            href={
+              "https://stellar.expert/explorer/testnet/tx/" +
+              (job.publication.cancellationTx ?? job.publication.fundingTx)
+            }
+            target="_blank"
+            rel="noreferrer"
+          >
+            View receipt
+          </a>
+        </p>
+      )}
+      {job.status === "Funding required" && (
+        <p className="task-changed-notice">
+          This older task has no publication deposit and is hidden from Browse
+          tasks. Remove it and post a funded task.
+        </p>
+      )}
+      {job.updatedAt && (
+        <p className="task-edit-time">
+          Updated {new Date(job.updatedAt).toLocaleString()}
+        </p>
+      )}
       <dl className="request-facts">
         <div>
           <dt>
@@ -136,6 +208,7 @@ export function RequestDetail({
             enabled={payment.enabled}
             submit={payment.submit}
             onComplete={onComplete}
+            completionBlocked={evidencePending}
           />
         </section>
       )}
@@ -162,7 +235,8 @@ export function RequestDetail({
         <details className="request-next applications" key={job.id}>
           <summary className="button button-secondary applications-toggle">
             {booking ? "Applications" : "View applications"} (
-            {job.quotes.length})<ChevronDown size={15} aria-hidden="true" />
+            {job.quotes.filter((q) => !q.withdrawnAt).length})
+            <ChevronDown size={15} aria-hidden="true" />
           </summary>
           {job.quotes.length === 0 && (
             <p className="empty-message">
@@ -179,6 +253,9 @@ export function RequestDetail({
               onSelect={
                 job.status === "Open" && !job.accepted ? onAccept : undefined
               }
+              needsReview={Boolean(
+                job.revision && quote.taskRevision !== job.revision,
+              )}
             />
           ))}
         </details>
@@ -189,10 +266,50 @@ export function RequestDetail({
           <h3>
             Your application
             <span className="status" data-tone="neutral">
-              {job.status === "Open" ? "Sent" : "Another provider selected"}
+              {ownQuote.withdrawnAt
+                ? "Withdrawn"
+                : job.status === "Open"
+                  ? "Sent"
+                  : job.accepted
+                    ? "Another provider selected"
+                    : "Task closed"}
             </span>
           </h3>
           <ApplicationCard quote={ownQuote} showReputation={false} />
+          {job.status === "Open" && job.revision && ownQuote.revision && (
+            <div className="application-edit-actions">
+              {!ownQuote.withdrawnAt &&
+                ownQuote.taskRevision !== job.revision && (
+                  <p className="task-changed-notice">
+                    The task has changed since you applied. Review the details
+                    and confirm your offer before the owner can select you.
+                  </p>
+                )}
+              <button
+                className="button button-secondary"
+                type="button"
+                disabled={busy}
+                onClick={onEditApplication}
+              >
+                <Pencil size={15} aria-hidden="true" />
+                {ownQuote.withdrawnAt
+                  ? "Apply again"
+                  : ownQuote.taskRevision !== job.revision
+                    ? "Review & update application"
+                    : "Edit application"}
+              </button>
+              {job.lifecycleReady && !ownQuote.withdrawnAt && (
+                <button
+                  type="button"
+                  className="text-button"
+                  disabled={busy}
+                  onClick={onWithdraw}
+                >
+                  Withdraw application
+                </button>
+              )}
+            </div>
+          )}
         </section>
       )}
       {job.status === "Open" && !job.own && !ownQuote && (
@@ -221,7 +338,12 @@ export function RequestDetail({
             </details>
           )}
           {experienceReady && (
-            <BookingExperiencePanel key={job.id} job={job} wallet={wallet} />
+            <BookingExperiencePanel
+              key={job.id}
+              job={job}
+              wallet={wallet}
+              onEvidencePendingChange={setEvidencePending}
+            />
           )}
         </section>
       )}

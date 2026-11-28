@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { pageHref } from "@/features/book-one/navigation";
 import {
@@ -17,6 +19,7 @@ import {
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import type { Page } from "@/features/book-one/model";
+import { useSidebarCollapse } from "@/hooks/use-sidebar-collapse";
 import "./marketplace-shell.css";
 
 const navigation = [
@@ -58,6 +61,7 @@ export function MarketplaceShell({
   children,
 }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const sidebar = useSidebarCollapse();
 
   function navigate(next: Page) {
     onNavigate(next);
@@ -65,57 +69,86 @@ export function MarketplaceShell({
   }
 
   return (
-    <div className="marketplace-shell" data-menu={menuOpen ? "open" : "closed"}>
+    <div
+      className="marketplace-shell"
+      data-menu={menuOpen ? "open" : "closed"}
+      data-sidebar={sidebar.collapsed ? "collapsed" : "expanded"}
+    >
       <a className="skip-link" href="#marketplace-main">
         Skip to content
       </a>
       <aside className="workspace-sidebar" id="workspace-sidebar">
-        <button
-          className="brand"
-          type="button"
-          onClick={() => navigate("Home")}
-        >
-          <span className="brand-mark" aria-hidden="true" />
-          Campuscrew
-        </button>
-        <nav aria-label="Main navigation">
-          {navigation.map((group) => (
-            <div className="navigation-group" key={group.label}>
-              <p>{group.label}</p>
-              {group.items.map(({ view: item, icon: Icon }) => (
-                <Link
-                  href={pageHref(item)}
-                  key={item}
-                  className="navigation-item"
-                  aria-current={view === item ? "page" : undefined}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    navigate(item);
-                  }}
-                >
-                  <Icon aria-hidden="true" size={18} />
-                  <span>{item}</span>
-                </Link>
-              ))}
+        <div className="sidebar-content">
+          <button
+            className="brand"
+            aria-label="CampusCrew home"
+            title="CampusCrew home"
+            type="button"
+            onClick={() => navigate("Home")}
+          >
+            <span className="brand-mark" aria-hidden="true" />
+            <span className="brand-name">Campuscrew</span>
+          </button>
+          <nav aria-label="Main navigation">
+            {navigation.map((group) => (
+              <div className="navigation-group" key={group.label}>
+                <p>{group.label}</p>
+                {group.items.map(({ view: item, icon: Icon }) => (
+                  <Link
+                    href={pageHref(item)}
+                    key={item}
+                    className="navigation-item"
+                    aria-label={item}
+                    title={item}
+                    aria-current={view === item ? "page" : undefined}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      navigate(item);
+                    }}
+                  >
+                    <Icon aria-hidden="true" size={18} />
+                    <span>{item}</span>
+                  </Link>
+                ))}
+              </div>
+            ))}
+          </nav>
+          {logout && (
+            <div className="sidebar-footer">
+              <button
+                className="navigation-item"
+                type="button"
+                aria-label="Log out"
+                title="Log out"
+                disabled={logout.pending}
+                onClick={() => {
+                  setMenuOpen(false);
+                  logout.run();
+                }}
+              >
+                <LogOut aria-hidden="true" size={18} />
+                <span>Log out</span>
+              </button>
             </div>
-          ))}
-        </nav>
-        {logout && (
-          <div className="sidebar-footer">
-            <button
-              className="navigation-item"
-              type="button"
-              disabled={logout.pending}
-              onClick={() => {
-                setMenuOpen(false);
-                logout.run();
-              }}
-            >
-              <LogOut aria-hidden="true" size={18} />
-              <span>Log out</span>
-            </button>
-          </div>
-        )}
+          )}
+        </div>
+        <button
+          className="sidebar-edge"
+          type="button"
+          aria-label={sidebar.collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={
+            sidebar.collapsed
+              ? "Hover to expand sidebar"
+              : "Hover to collapse sidebar"
+          }
+          aria-expanded={!sidebar.collapsed}
+          aria-controls="workspace-sidebar"
+          onPointerEnter={(event) => sidebar.hoverEdge(event.pointerType)}
+          onPointerLeave={sidebar.cancelHover}
+          onPointerDown={sidebar.cancelHover}
+          onBlur={sidebar.cancelHover}
+          onClick={sidebar.toggle}
+        />
       </aside>
 
       <div className="workspace-main">
