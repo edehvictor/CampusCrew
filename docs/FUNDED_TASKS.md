@@ -43,7 +43,7 @@ Do not trust frontend labels or amounts. PostgreSQL independently checks quote l
 
 ## Deployment sequence
 
-1. Run application checks and Rust formatting, tests, Clippy and release Wasm build. The suite now defines 20 Rust scenarios, including six reserve-before-publication scenarios. If Windows still cannot download dependencies, use the existing Linux **Stellar escrow** GitHub Actions workflow. Download the artifact from the successful run for the new commit; the previous contract artifact does not contain these methods.
+1. Run application checks and Rust formatting, tests, Clippy and release Wasm build. The suite now defines 21 Rust scenarios, including six reserve-before-publication scenarios and a check that creation and assignment authorize the owner once with the complete terms. If Windows still cannot download dependencies, use the existing Linux **Stellar escrow** GitHub Actions workflow. Download the artifact from the successful run for the new commit; the previous contract artifact does not contain these methods.
 2. Extract the verified `campuscrew_escrow.wasm` into `target/verified/`.
 3. Deploy the separate Testnet contract:
    ```powershell

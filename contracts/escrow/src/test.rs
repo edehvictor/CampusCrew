@@ -1,7 +1,7 @@
 use super::*;
 use soroban_sdk::{
-    testutils::{Address as _, Ledger},
-    vec,
+    testutils::{Address as _, AuthorizedFunction, Ledger},
+    vec, IntoVal, Symbol, Val,
 };
 
 struct Fixture {
@@ -154,6 +154,21 @@ impl Fixture {
 
     fn balance(&self, wallet: &Address) -> i128 {
         token::Client::new(&self.env, &self.token).balance(wallet)
+    }
+
+    fn assert_owner_auth(&self, function: &str, args: Vec<Val>) {
+        let auths = self.env.auths();
+        assert_eq!(auths.len(), 1);
+        assert_eq!(auths[0].0, self.organizer);
+        assert_eq!(
+            auths[0].1.function,
+            AuthorizedFunction::Contract((
+                self.contract.clone(),
+                Symbol::new(&self.env, function),
+                args,
+            ))
+        );
+        assert!(auths[0].1.sub_invocations.is_empty());
     }
 
     fn create(&self, plan: &Vec<(Address, i128)>) {
@@ -514,8 +529,16 @@ fn invalid_plans_and_reused_identifiers_are_rejected() {
 }
 
 #[test]
-fn missing_signatures_cannot_accept_contribute_submit_release_or_resolve() {
+fn missing_signatures_cannot_create_accept_contribute_submit_release_or_resolve() {
     let f = Fixture::new();
+    let plan = vec![&f.env, (f.organizer.clone(), 100)];
+    f.env.set_auths(&[]);
+    assert!(f
+        .client()
+        .try_create(&f.id, &f.organizer, &f.provider, &plan, &2_000, &10_000)
+        .is_err());
+    assert!(f.client().try_get_booking(&f.id).is_err());
+    f.env.mock_all_auths();
     f.individual();
     f.env.set_auths(&[]);
     assert!(f.client().try_accept(&f.id).is_err());
@@ -584,4 +607,35 @@ fn publication_and_assignment_require_owner_signatures_and_preserve_other_deposi
     f.client().cancel_publication(&second);
     assert_eq!(f.balance(&f.organizer), 170);
     assert_eq!(f.balance(&f.contract), 0);
+}
+
+#[test]
+fn creation_and_assignment_authorize_the_owner_once_with_the_full_terms() {
+    let f = Fixture::new();
+    let plan = vec![&f.env, (f.organizer.clone(), 100)];
+    f.client()
+        .create(&f.id, &f.organizer, &f.provider, &plan, &2_000, &10_000);
+    f.assert_owner_auth(
+        "create",
+        (
+            f.id.clone(),
+            f.organizer.clone(),
+            f.provider.clone(),
+            plan,
+            2_000_u64,
+            10_000_u64,
+        )
+            .into_val(&f.env),
+    );
+
+    let second = BytesN::from_array(&f.env, &[2; 32]);
+    token::StellarAssetClient::new(&f.env, &f.token).mint(&f.organizer, &100);
+    f.client().publish(&second, &f.organizer, &100, &2_000);
+    f.client().assign(&second, &f.provider, &60, &10_000);
+    f.assert_owner_auth(
+        "assign",
+        (second, f.provider.clone(), 60_i128, 10_000_u64).into_val(&f.env),
+    );
+    assert_eq!(f.balance(&f.organizer), 40);
+    assert_eq!(f.balance(&f.contract), 60);
 }

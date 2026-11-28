@@ -23,7 +23,7 @@ Implement a single Soroban escrow supporting one contributor or several contribu
 
 Current implementation: `contracts/escrow/src/lib.rs`, with tests in `contracts/escrow/src/test.rs`.
 
-Earlier build failures were fixed in two steps: the signing dependency was resolved to `ed25519-dalek` 2.2.0, then the contract-error test assertions were converted to the SDK's error wrapper. Windows Application Control still prevents local Rust compilation, so Linux CI is the verification environment. The current passing result and deployed contract are recorded below.
+Earlier build failures were fixed in two steps: the signing dependency was resolved to `ed25519-dalek` 2.2.0, then the contract-error test assertions were converted to the SDK's error wrapper. Windows Application Control initially prevented local Rust compilation, so Linux CI verified that deployment. Local verification for the funded-task upgrade is recorded below. The current passing result and deployed contract are recorded below.
 
 Acceptance: formatting, contract tests, Clippy, and a release WebAssembly build pass. Test signature requirements, replay attempts, incomplete groups, rounding, expiry, cancellation, and failure rollback.
 
@@ -95,7 +95,9 @@ At the user request, restored the previous Explore campuses design. The redesign
 
 A separate reserve-before-publication protocol is implemented in source. Owners fund their maximum task budget before a public task row is created; quotes are capped at that budget. Assignment reuses the deposit and atomically returns any difference. New application withdrawal and task removal retain private history and refund unassigned deposits before removing their listing. Older bookings retain their original contract.
 
-Application/database checks cover private funding intents, receipt binding, budget ceilings, ownership, withdrawn offers, replay, selection/removal races and expired listings. The new contract methods and six additional Rust scenarios require verification before deployment. Formatting now passes after the user resolved the Windows formatter restriction; dependency downloads still encounter a Windows TLS error in this session. Do not enable the new funding configuration until the new Rust checks and separate deployment pass. See `docs/FUNDED_TASKS.md` for activation and two-wallet acceptance tests. Group booking remains a later milestone.
+Application/database checks cover private funding intents, receipt binding, budget ceilings, ownership, withdrawn offers, replay, selection/removal races and expired listings. On November 28, the new assignment test reproduced `Auth, ExistingValue`: both `assign` and its shared booking helper authorized the same owner in one invocation. Authorization now happens once at each public entry point (`create` and `assign`). Tests verify that unsigned creation and assignment fail, and that the recorded authorization binds the owner and complete terms.
+
+Local verification passed: formatting, all 21 Rust tests, Clippy with warnings denied, the release `wasm32v1-none` build, all 120 application tests, ESLint and the production Next.js build. The missing guest crate was fetched over HTTPS and matched its `Cargo.lock` checksum after Windows Cargo encountered a TLS error. Run CI for the fixed commit, then verify the separate deployment before enabling funded posting. The existing deployment remains unchanged. See `docs/FUNDED_TASKS.md` for activation and two-wallet acceptance tests. Group booking remains a later milestone.
 
 ## November 28 evidence workflow
 

@@ -210,6 +210,7 @@ fn payout(env: &Env, id: &BytesN<32>, mut booking: Booking, provider_amount: i12
     );
 }
 
+// Both public callers authorize the organizer before entering this shared helper.
 fn create_booking(
     env: Env,
     id: BytesN<32>,
@@ -219,7 +220,6 @@ fn create_booking(
     funding_deadline: u64,
     work_deadline: u64,
 ) {
-    organizer.require_auth();
     if env.storage().persistent().has(&Key::Booking(id.clone())) {
         panic_with_error!(&env, Error::Exists);
     }
@@ -403,6 +403,7 @@ impl CampusCrewEscrow {
         funding_deadline: u64,
         work_deadline: u64,
     ) {
+        organizer.require_auth();
         if env
             .storage()
             .persistent()
