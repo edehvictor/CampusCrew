@@ -159,9 +159,9 @@
   color: var(--ink);
 }
 .navigation-item[aria-current="page"] {
-  border-color: transparent;
+  border-color: var(--lavender);
   background: var(--primary-wash);
-  box-shadow: none;
+  box-shadow: inset 3px 0 var(--brand);
   color: var(--primary-ink);
 }
 
